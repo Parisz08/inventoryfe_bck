@@ -1,0 +1,211 @@
+<table class="table align-items-center mb-0">
+  <thead>
+    <tr style="color: white;">
+      <th colspan="9" class="text-uppercase text-xxs font-weight-bolder text-center">Basic Data</th>
+      <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">Alpa</th>
+      <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">HK</th>
+      <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">OT</th>
+      <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">Lembur</th>
+      <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">Bonus</th>
+      <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">Total Gaji</th>
+      <th colspan="11" style="background-color: dimgrey;" class="text-uppercase text-xxs font-weight-bolder text-center">Potongan</th>
+      <th colspan="8" style="background-color: #00CED1;" class="text-uppercase text-xxs font-weight-bolder text-center">Final Salary</th>
+    </tr>
+    <tr style="color: white;">
+      <th style="background-color: #FF7F50;" class="text-uppercase text-xxs font-weight-bolder">Nama Karyawan</th>
+      <th style="background-color: #FF7F50;" class="text-uppercase text-xxs font-weight-bolder ">Unit</th>
+      <th style="background-color: #FF7F50;" class="text-uppercase text-xxs font-weight-bolder ">Status</th>
+      <th style="background-color: #FF7F50;" class="text-uppercase text-xxs font-weight-bolder ">Harian</th>
+      <th style="background-color: #FF7F50;" class="text-uppercase text-xxs font-weight-bolder ">Bulanan</th>
+      <th style="background-color: #FF7F50;" class="text-uppercase text-xxs font-weight-bolder ">Gaji Pokok</th>
+      <th style="background-color: #FF7F50;" class="text-uppercase text-xxs font-weight-bolder ">Tj Skill/Jabatan</th>
+      <th style="background-color: #FF7F50;" class="text-uppercase text-xxs font-weight-bolder ">Transport</th>
+      <th style="background-color: #FF7F50;" class="text-uppercase text-xxs font-weight-bolder ">Makan</th>
+      <th class="text-uppercase text-xxs font-weight-bolder ">Piutang</th>
+      <th class="text-uppercase text-xxs font-weight-bolder ">Pinjaman</th>
+      <th class="text-uppercase text-xxs font-weight-bolder ">PPH21</th>
+      <th class="text-uppercase text-xxs font-weight-bolder ">Upah BPJS</th>
+      <th class="text-uppercase text-xxs font-weight-bolder ">JHT</th>
+      <th class="text-uppercase text-xxs font-weight-bolder ">JKM</th>
+      <th class="text-uppercase text-xxs font-weight-bolder ">JKK</th>
+      <th class="text-uppercase text-xxs font-weight-bolder ">JP</th>
+      <th class="text-uppercase text-xxs font-weight-bolder ">JKS</th>
+      <th class="text-uppercase text-xxs font-weight-bolder ">TOTAL POTONGAN BPJS</th>
+      <th class="text-uppercase text-xxs font-weight-bolder ">TOTAL POTONGAN</th>
+      <th style="background-color: #90EE90;" class="text-uppercase text-xxs font-weight-bolder ">Gaji Diterima</th>
+      <th style="background-color: #90EE90;" class="text-uppercase text-xxs font-weight-bolder ">Sudah Di TF</th>
+      <th style="background-color: #90EE90;" class="text-uppercase text-xxs font-weight-bolder ">Kekurangan</th>
+      <th style="background-color: #90EE90;" class="text-uppercase text-xxs font-weight-bolder ">No Rek</th>
+      <th style="background-color: #90EE90;" class="text-uppercase text-xxs font-weight-bolder ">AN Rek</th>
+      <th style="background-color: #90EE90;" class="text-uppercase text-xxs font-weight-bolder ">Bank</th>
+      <th style="background-color: #90EE90;" class="text-uppercase text-xxs font-weight-bolder ">Slip Gaji</th>
+      <th style="background-color: #90EE90;" class="text-uppercase text-xxs font-weight-bolder ">Send Slip Gaji</th>
+      
+    </tr>
+  </thead>
+  <tbody>
+    <tr v-for="(row, i) in absenKaryawan.data" :key="i" @click="setBg(i)" :style="(backgroundRed == i) ? 'background-color: #F0F8FF; cursor: pointer;' : 'cursor: pointer;' ">
+      <td>
+        <div class="d-flex px-2 py-1">
+          <div class="d-flex flex-column justify-content-center">
+            <h6 class="mb-0 text-sm"> row.nama </h6>
+            <p class="text-xs text-secondary mb-0"> row.jabatan</p>
+          </div>
+        </div>
+      </td>
+      <td>
+        <p class="text-xs font-weight-bold mb-0"> row.unit </p>
+        <p class="text-xs font-weight-bold mb-0"> row.id_karyawan </p>
+      </td>
+      <!-- STATUS -->
+      <td class="align-middle text-center text-sm">
+        <span class="badge badge-sm bg-gradient-success"> row.status </span>
+      </td>
+      <!-- HARIAN -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(row.harian) </span>
+      </td>
+      <!-- BULANAN -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(row.bulanan) </span>
+      </td>
+      <!-- GAJI POKOK -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(((row.harian == 0) ? ((row.bulanan / 22) * row.total_kerja_count) : (row.harian * row.total_kerja_count) )) </span>
+      </td>
+      <!-- TJ SKILL -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(row.tj_jabatan_skill) </span>
+      </td>
+      <!-- TRANSPORT -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(row.transport) </span>
+      </td>
+      <!-- U. MAKAN -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp((row.makan * row.total_kerja_count)) </span>
+      </td>
+      <!-- TOTAL ALPA -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> row.total_alpa_count </span>
+      </td>
+      <!-- TOTAL HK -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> row.total_kerja_count </span>
+      </td>
+      <!-- TOTAL OT -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> row.total_ot_count </span>
+      </td>
+      <!-- LEMBUR -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619)) </span>
+      </td>
+      <!-- BONUS -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold">BONUS</span>
+      </td>
+      <!-- TOTAL GAJI -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(Number(((row.harian == 0) ? ((row.bulanan / 22) * row.total_kerja_count) : (row.harian * row.total_kerja_count) ) + row.tj_jabatan_skill + row.transport + (row.makan * row.total_kerja_count) + row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619)) ) </span>
+      </td>
+      <!-- PIUTANG -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold" v-if="row.rel_payroll != null">
+          <input style="border: 1px solid transparent; background: transparent; text-align: center;" size="8" v-model="row.rel_payroll.piutang" @change="updatePayroll(row.rel_payroll.id, row.rel_payroll.piutang, row.rel_payroll.pinjaman, row.rel_payroll.kekurangan, row.rel_payroll.status_tf, row.rel_payroll.send_slip)">
+        </span>
+      </td>
+      <!-- PINJAMAN -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold" v-if="row.rel_payroll != null">
+          <input style="border: 1px solid transparent; background: transparent; text-align: center;" size="8" v-model="row.rel_payroll.pinjaman" @change="updatePayroll(row.rel_payroll.id, row.rel_payroll.piutang, row.rel_payroll.pinjaman, row.rel_payroll.kekurangan, row.rel_payroll.status_tf, row.rel_payroll.send_slip)">
+        </span>
+      </td>
+      <!-- PPH21 -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold">PPH21</span>
+      </td>
+      <!-- UPAH BPJS -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(row.upah_bpjs) </span>
+      </td>
+      <!-- JHT -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(row.upah_bpjs * Number(row.jht)) </span>
+      </td>
+      <!-- JKM -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(row.upah_bpjs * Number(row.jkm)) </span>
+      </td>
+      <!-- JKK -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(row.upah_bpjs * Number(row.jkk)) </span>
+      </td>
+      <!-- JP -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(row.upah_bpjs * Number(row.jp)) </span>
+      </td>
+      <!-- JKS -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(Number(row.jks) * Number(4309772)) </span>
+      </td>
+      <!-- TOTAL POTONGAN BPJS -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(Number(row.upah_bpjs * Number(row.jht) +  row.upah_bpjs * Number(row.jkm) + row.upah_bpjs * Number(row.jkk) + row.upah_bpjs * Number(row.jp) + Number(row.jks) * Number(4309772))) </span>
+      </td>
+      <!-- TOTAL POTONGAN -->
+      <td class="align-middle text-center">
+        <span v-if="row.rel_payroll != null">
+          <span class="text-secondary text-xs font-weight-bold"> convertRp(Number(row.rel_payroll.piutang + row.rel_payroll.pinjaman + row.upah_bpjs * Number(row.jht) +  row.upah_bpjs * Number(row.jkm) + row.upah_bpjs * Number(row.jkk) + row.upah_bpjs * Number(row.jp) + Number(row.jks) * Number(4309772))) </span>
+        </span>
+      </td>
+      <!-- GAJI DITERIMA -->
+      <td class="align-middle text-center" v-if="row.rel_payroll != null">
+        <span class="text-secondary text-xs font-weight-bold"> convertRp(Number(((row.harian == 0) ? ((row.bulanan / 22) * row.total_kerja_count) : (row.harian * row.total_kerja_count) ) + row.tj_jabatan_skill + row.transport + (row.makan * row.total_kerja_count) + row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619)) - ( Number(row.rel_payroll.piutang + row.rel_payroll.pinjaman) + Number(row.upah_bpjs * Number(row.jht) +  row.upah_bpjs * Number(row.jkm) + row.upah_bpjs * Number(row.jkk) + row.upah_bpjs * Number(row.jp) + Number(row.jks) * Number(4309772))) ) </span>
+      </td>
+      <!-- STATUS TF -->
+      <td class="align-middle text-center">
+        <span v-if="row.rel_payroll != null">
+          <input type="checkbox" v-model="row.rel_payroll.status_tf" @change="updatePayroll(row.rel_payroll.id, row.rel_payroll.piutang, row.rel_payroll.pinjaman, row.rel_payroll.kekurangan, row.rel_payroll.status_tf, row.rel_payroll.send_slip)">
+        </span>
+      </td>
+      <!-- KEKURANGAN -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold" v-if="row.rel_payroll != null">
+          <input style="border: 1px solid transparent; background: transparent; text-align: center;" size="8" v-model="row.rel_payroll.kekurangan" @change="updatePayroll(row.rel_payroll.id, row.rel_payroll.piutang, row.rel_payroll.pinjaman, row.rel_payroll.kekurangan, row.rel_payroll.status_tf, row.rel_payroll.send_slip)">
+        </span>
+      </td>
+      <!-- NO REK -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> row.no_rek </span>
+      </td>
+      <!-- AN REK -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> row.an_rek </span>
+      </td>
+      <!-- BANK -->
+      <td class="align-middle text-center">
+        <span class="text-secondary text-xs font-weight-bold"> row.bank </span>
+      </td>
+      <!-- DETAIL SLIP -->
+      <td class="align-middle text-center text-sm">
+        <router-link :to="/detail-slip/+row.id_karyawan+'/'+search.periode_start+'/'+search.periode_end"><span class="badge badge-sm bg-gradient-info">Slip</span></router-link>
+      </td>
+      <!-- SEND SLIP -->
+      <td class="align-middle text-center">
+        <span v-if="row.rel_payroll != null">
+          <input type="checkbox" v-model="row.rel_payroll.send_slip" @change="updatePayroll(row.rel_payroll.id, row.rel_payroll.piutang, row.rel_payroll.pinjaman, row.rel_payroll.kekurangan, row.rel_payroll.status_tf, row.rel_payroll.send_slip)">
+        </span>
+      </td>
+    </tr>
+    <!-- <tr>
+      <td colspan="" style="background-color: #F8F8FF; text-align: center;">TOTAL</td>
+      <td style="background-color: #F8F8FF; text-align: center;"> totalSakitAll </td>
+      <td style="background-color: #F8F8FF; text-align: center;"> totalIjinAll </td>
+      <td style="background-color: #F8F8FF; text-align: center;"> totalAlpaAll </td>
+      <td style="background-color: #F8F8FF; text-align: center;"> totalCutiAll </td>
+      <td style="background-color: #F8F8FF; text-align: center;"> totalKerjAll </td>
+      <td style="background-color: #F8F8FF; text-align: center;"> totalOTAll </td>
+    </tr> -->
+  </tbody>
+</table>

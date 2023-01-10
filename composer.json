@@ -8,7 +8,9 @@
         "php": ">=7.1.3",
         "laravel/lumen-framework": "5.6.*",
         "vlucas/phpdotenv": "~2.2",
-        "pdfcrowd/pdfcrowd": "^5.10"
+        "spatie/browsershot": "^3.40",
+        "illuminate/mail": "5.6.*",
+        "maatwebsite/excel": "^3.1"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
@@ -38,16 +40,5 @@
         "allow-plugins": {
             "kylekatarnls/update-helper": true
         }
-    },
-    "scripts": {
-        "post-install-cmd": [
-            "PhantomInstaller\\Installer::installPhantomJS"
-        ],
-        "post-update-cmd": [
-            "PhantomInstaller\\Installer::installPhantomJS"
-        ]
-    },
-    "config": {
-        "bin-dir": "bin"
     }
 }

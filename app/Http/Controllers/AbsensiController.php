@@ -7,6 +7,7 @@ use App\Http\Library\Responses;
 use Illuminate\Support\Facades\DB;
 use App\Karyawan;
 use App\Absen;
+use App\Payroll;
 use validator;
 use App\Http\Traits\LoggedUser;
 
@@ -51,9 +52,9 @@ class AbsensiController extends Controller
                       }
 
                       if (empty($request->input('nama'))) {
-                            $result = $master->orderBy('nama', 'ASC')->get();
+                            $result = $master->orderBy('id_karyawan', 'ASC')->get();
                       }else{
-                            $result = $master->orderBy('nama', 'ASC')->get();
+                            $result = $master->orderBy('id_karyawan', 'ASC')->get();
                       }
                       $absenKaryawan = $result;
                           
@@ -109,15 +110,18 @@ class AbsensiController extends Controller
         $peroideEnd   = $request->input('periode_end');
         $period       = new \DatePeriod( new \DateTime($peroideStart), new \DateInterval('P1D'), new \DateTime($peroideEnd . ' +1 day'));
 
+        // LOOPING DATA KARYAWAN
         foreach ($dataKaryawan as $i => $karyawan) {
             $id_karyawan[$i] = $karyawan;
 
+            // LOOPING DATA TANGGAL
+            $periodeTotalHK = [];
             foreach ($period as $key => $value) {
                 $date[$key] = $value->format('Y-m-d');  
                 $day[$key]  = date('l', strtotime($value->format('Y-m-d')));  
 
+                // INSERT DATA ABSEN DAN PENGECEKAN AGAR TIDAK DUPLICATE
                 $cek = DB::table('absen')->where('id_karyawan', $id_karyawan[$i])->where('date', $date[$key])->first();
-
                 if (empty($cek)) {
                     $data              = new Absen;
                     $data->id_karyawan = $id_karyawan[$i];
@@ -126,11 +130,25 @@ class AbsensiController extends Controller
                         $data->type_hk = '';
                     }else{
                         $data->type_hk = 1;
+                        array_push($periodeTotalHK, 1);
                     }
                     $data->save(); 
                 }
             }
+
+            // INSERT DATA PAYROLL DAN PENGECEKAN AGAR TIDAK DUPLICATE
+            $cek = DB::table('payroll')->where('id_karyawan', $id_karyawan[$i])->where('periode_start', $peroideStart)->where('periode_end', $peroideEnd)->first();
+            if (empty($cek)) {
+                $payroll                   = new Payroll;
+                $payroll->id_karyawan      = $id_karyawan[$i];
+                $payroll->periode_start    = $peroideStart;
+                $payroll->periode_end      = $peroideEnd;
+                $payroll->periode_total_hk = array_sum($periodeTotalHK);
+                $payroll->send_slip        = 'true';
+                $payroll->save();
+            }
         }
+
 
         // if ($request->type == 'HK') {
         //     $type_hk = 1;
@@ -150,7 +168,7 @@ class AbsensiController extends Controller
         // $data->type_hk     = $type_hk;
         // $data->save();
 
-        return Responses::sendResponse($data, 'Absen Created Successfully');
+        return Responses::sendResponse(null, 'Absen Created Successfully');
     }
 
     public function update(Request $request)

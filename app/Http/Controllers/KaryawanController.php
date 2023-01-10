@@ -19,13 +19,13 @@ class KaryawanController extends Controller
             $data = DB::table('karyawan')
                     ->where('nama', 'LIKE', "%".$request->search."%")
                     ->orWhere('unit', 'LIKE', "%".$request->search."%")
-                    ->orderBy('nama', 'ASC')
+                    ->orderBy('id_karyawan', 'ASC')
                     ->paginate($per_page);
 
             $links = $data->appends(['search' => $request->search])->links();
         } else {
             $data = DB::table('karyawan')
-                    ->orderBy('nama', 'ASC')
+                    ->orderBy('id_karyawan', 'ASC')
                     ->paginate($per_page);
 
             $links = $data->links();

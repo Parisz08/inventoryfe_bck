@@ -9,11 +9,15 @@ use App\Absen;
 class Karyawan extends Model
 {
     protected $table = 'karyawan';
-    protected $fillable = ['id_karyawan','nama'];
+    protected $fillable = ['id_karyawan','nama','jabatan','unit','harian','bulanan','tj_jabatan_skill','transport','makan','bank','no_rek','an_rek','no_bpjs_tk','no_bpjs_kes','upah_bpjs','jht','jkm','jkk','jp','jks','nik','no_hp','email'];
 
     public function relAbsenKaryawan() 
     {
      return $this->hasMany('App\Absen', 'id_karyawan', 'id_karyawan')->orderBy('date', 'asc');
+    }
+    public function relPayroll() 
+    {
+     return $this->hasOne('App\Payroll', 'id_karyawan', 'id_karyawan')->orderBy('id_karyawan', 'asc');
     }
 
     public function totalKerja() 

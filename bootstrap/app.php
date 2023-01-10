@@ -89,6 +89,26 @@ $app->routeMiddleware([
 $app->register(App\Providers\AppServiceProvider::class);
 $app->register(App\Providers\AuthServiceProvider::class);
 $app->register(App\Providers\EventServiceProvider::class);
+$app->register(Illuminate\Mail\MailServiceProvider::class);
+$app->register(Maatwebsite\Excel\ExcelServiceProvider::class);
+
+/*
+|--------------------------------------------------------------------------
+| Class Aliases
+|--------------------------------------------------------------------------
+|
+| This array of class aliases will be registered when this application
+| is started. However, feel free to register as many as you wish as
+| the aliases are "lazy" loaded so they don't hinder performance.
+|
+*/
+    
+$app->alias('mail.manager', Illuminate\Mail\MailManager::class);
+$app->alias('mail.manager', Illuminate\Contracts\Mail\Factory::class);
+$app->alias('mailer', Illuminate\Mail\Mailer::class);
+$app->alias('mailer', Illuminate\Contracts\Mail\Mailer::class);
+$app->alias('mailer', Illuminate\Contracts\Mail\MailQueue::class);
+$app->alias('Excel', Maatwebsite\Excel\Facades\Excel::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -106,5 +126,7 @@ $app->router->group([
 ], function ($router) {
     require __DIR__.'/../routes/web.php';
 });
+
+$app->configure('mail');
 
 return $app;

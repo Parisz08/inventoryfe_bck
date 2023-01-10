@@ -10,10 +10,10 @@
 | and give it the Closure to call when that URI is requested.
 |
 */
-use JonnyW\PhantomJs\Client;
+use Spatie\Browsershot\Browsershot;
 
 $router->get('/', function () use ($router) {
-    return $router->app->version();
+    return view('email/mailSendSlip');
 });
 $router->get('/test', 'TestController@index');
 
@@ -31,25 +31,9 @@ $router->get('/test', 'TestController@index');
     // PAYROLL
     $router->get('payroll/index', 'PayrollController@index');
     $router->get('payroll/show', 'PayrollController@show');
-    $router->post('payroll/create', 'PayrollController@store');
-    $router->post('payroll/update-absen', 'PayrollController@update');
-
-$router->get('get-img', function () use ($router) {
-    
-    $client = Client::getInstance();
-    $client->getEngine()->setPath('../bin/phantomjs.exe');
-    
-    $request  = $client->getMessageFactory()->createPdfRequest('http://google.com');
-    $response = $client->getMessageFactory()->createResponse();
-    $file = 'screenshot/tes.jpg';
-    
-    $request->setOutputFile($file);
-    var_dump($response);
-    
-    $client->send($request, $response);
-
-    // rename('../bin/file.jpg', 'screenshot/tes.jpg');
-
-    // echo '<img src="screenshot/tes.jpg" alt="Screenshot" />';
-
-});
+    $router->post('payroll/update-payroll', 'PayrollController@update');
+    $router->get('payroll/send-slip', 'PayrollController@sendSlip');
+    // EXPORT EXCEL
+    $router->get('export-excel/payroll', 'ExportExcelController@payroll');
+    // IMPORT
+    $router->post('import/import-data-karyawan', 'ImportController@importKaryawan');
