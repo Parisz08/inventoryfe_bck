@@ -25,4 +25,11 @@ export default {
     delete(id) {
         return Service().post('karyawan/delete/'+id);
     },
+    import(params) {
+        return Service().post('import/import-data-karyawan', params, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+        });
+    },
 }

@@ -8,21 +8,10 @@ export default {
     show(params) {
         return Service().get('payroll/show', {params});
     },
-    create(params) {
-        return Service().post('payroll/create', params, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-        });
+    updatePayroll(params) {
+        return Service().post('payroll/update-payroll', params);
     },
-    update(id, params) {
-        return Service().post('payroll/update/'+id, params, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-        });
-    },
-    delete(id) {
-        return Service().post('payroll/delete/'+id);
+    sendSlip(params) {
+        return Service().get('payroll/send-slip', {params});
     },
 }

@@ -1,7 +1,7 @@
 <template>
   <div class="py-4 container-fluid">
     <argon-button color="info" size="sm" class="mb-3" variant="gradient" style="margin-right: 10px;"><i class="fa fa-download fa-sm"></i> Export</argon-button>
-    <argon-button color="warning" size="sm" class="mb-3" variant="gradient"><i class="fa fa-upload fa-sm"></i> Import</argon-button>
+    <argon-button color="warning" size="sm" class="mb-3" variant="gradient" @click="modalImport()"><i class="fa fa-upload fa-sm"></i> Import</argon-button>
     <div class=" row">
       <div class="col-12">
           <div class="card"> 
@@ -39,7 +39,9 @@
                       <th class="text-uppercase text-secondary text-xxs font-weight-bolder ">Nama</th>
                       <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">Unit</th>
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Status</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Gaji Pokok</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">NIK</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">No HP</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Email</th>
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">No Rek</th>
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">A/N REk</th>
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Bank</th>
@@ -55,7 +57,7 @@
                           <div class="d-flex px-2 py-1">
                             <div>
                               <img
-                                src="../../assets/img/team-2.jpg"
+                                src="../../assets/img/avatar_karyawan.png"
                                 class="avatar avatar-sm me-3"
                                 alt="user1"
                               />
@@ -75,7 +77,13 @@
                         <span class="badge badge-sm bg-gradient-success">{{ row.status }}</span>
                       </td>
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">Rp. {{ row.gaji_pokok}}</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ row.nik}}</span>
+                      </td>
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs font-weight-bold">{{ row.no_hp}}</span>
+                      </td>
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs font-weight-bold">{{ row.email}}</span>
                       </td>
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ row.no_rek }}</span>
@@ -93,7 +101,7 @@
                         <span class="text-secondary text-xs font-weight-bold">KAS-K65758</span>
                       </td> -->
                       <td>
-                        <i class="fas fa-edit fa-sm" aria-hidden="true" style="cursor: pointer; margin-right: 20px;" @click="edit(row.id)" title="Edit"></i>
+                        <!-- <i class="fas fa-edit fa-sm" aria-hidden="true" style="cursor: pointer; margin-right: 20px;" @click="edit(row.id)" title="Edit"></i> -->
                         <i class="fa fa-trash-o fa-sm" aria-hidden="true" title="Hapus" style="cursor: pointer; margin-right: 20px;" @click="remove(row.id)"></i>
                       </td>
                     </tr>
@@ -102,7 +110,7 @@
               </div>
             </div>
             <div class="card-footer">
-              <div>
+              <!-- <div>
                 <argon-pagination class="float-right">
                   <argon-pagination-item prev />
                   <argon-pagination-item label="1" active />
@@ -110,7 +118,7 @@
                   <argon-pagination-item label="3" />
                   <argon-pagination-item next />
                  </argon-pagination>
-              </div>
+              </div> -->
             </div>
           </div>
       </div>
@@ -135,16 +143,16 @@
         <input type="text" class="form-control" placeholder="ID Karyawan" v-model="karyawan.id_karyawan">
         <label for="example-text-input" class="form-control-label mt-3">Nama <span style="color: red;">*</span></label>
         <input type="text" class="form-control" placeholder="Nama" v-model="karyawan.nama" required>
-        <!-- <label for="example-text-input" class="form-control-label mt-3">NIK</label>
-        <input type="text" class="form-control" placeholder="NIK" v-model="karyawan.nik"> -->
+        <label for="example-text-input" class="form-control-label mt-3">NIK</label>
+        <input type="text" class="form-control" placeholder="NIK" v-model="karyawan.nik">
         <label for="example-text-input" class="form-control-label mt-3">Jabatan <span style="color: red;">*</span></label>
         <input type="text" class="form-control" placeholder="Jabatan" v-model="karyawan.jabatan" required>
         <label for="example-text-input" class="form-control-label mt-3">Unit <span style="color: red;">*</span></label>
         <input type="text" class="form-control" placeholder="Unit" v-model="karyawan.unit" required>
         <label for="example-text-input" class="form-control-label mt-3">Status <span style="color: red;">*</span></label>
         <input type="text" class="form-control" placeholder="Status" v-model="karyawan.status" required>
-        <label for="example-text-input" class="form-control-label mt-3">Gaji Pokok <span style="color: red;">*</span></label>
-        <input type="number" class="form-control" placeholder="Gaji Pokok" v-model="karyawan.gaji_pokok" required>
+        <!-- <label for="example-text-input" class="form-control-label mt-3">Gaji Pokok <span style="color: red;">*</span></label>
+        <input type="number" class="form-control" placeholder="Gaji Pokok" v-model="karyawan.gaji_pokok" required> -->
         <label for="example-text-input" class="form-control-label mt-3">Harian</label>
         <input type="number" class="form-control" placeholder="Harian" v-model="karyawan.harian">
         <label for="example-text-input" class="form-control-label mt-3">Bulanan</label>
@@ -165,8 +173,8 @@
         <input type="text" class="form-control" placeholder="NO BPJS TK" v-model="karyawan.no_bpjs_tk">
         <label for="example-text-input" class="form-control-label mt-3">NO BPJS KES</label>
         <input type="text" class="form-control" placeholder="NO BPJS KES" v-model="karyawan.no_bpjs_kes">
-        <label for="example-text-input" class="form-control-label mt-3">Total Cuti <span style="color: red;">*</span></label>
-        <input type="number" class="form-control" placeholder="Total Cuti" v-model="karyawan.total_cuti" required>
+        <!-- <label for="example-text-input" class="form-control-label mt-3">Total Cuti <span style="color: red;">*</span></label>
+        <input type="number" class="form-control" placeholder="Total Cuti" v-model="karyawan.total_cuti" required> -->
       </div>
       <!-- footer -->
       <div class="row float-right mt-3">
@@ -182,14 +190,78 @@
       <!-- end footer -->
     </vue-final-modal>
    </div>
+
+  <!-- =======  MODAL IMPORT ======= -->
+  <div class="container">
+    <vue-final-modal v-model="formImport.show" classes="modal-container" content-class="modal-content" :z-index="10000">
+    <!-- header -->
+    <div class="row">
+      <div class="col-11 float-left">
+        <span class="modal__title">{{formImport.title}}</span>
+      </div>
+      <div class="col-1 float-right">
+        <i style="cursor: pointer;" class="fa fa-times" aria-hidden="true" @click="formImport.show = false"></i>
+      </div>
+    </div><hr>
+    <!-- end header -->
+    <div class="modal__content container">
+      <div>
+        <label for="example-text-input" class="form-control-label mt-3">Upload File <span style="color: red;">*</span></label>
+        <input type="file" class="form-control" placeholder="Upload File" @change="filesChange" style="margin-bottom: 20px;">
+        <small>Download Template<a :href="storageUrl+'/template_import/Template Import Data Karyawan.xlsx'" style="color: blue;"> Import Data Karyawan</a></small>
+        <div class="mt-2" v-if="tabelError.data.length !== 0 ">
+          <table>
+            <thead>
+              <slot name="columns">
+                <tr style="background-color: #F0F8FF;">
+                  <th style="font-size: 13px; text-align: center;">Column</th>
+                  <th style="font-size: 13px; text-align: center;">Error</th>
+                  <th style="font-size: 13px; text-align: center;">Row</th>
+                  <th style="font-size: 13px; text-align: center;">Values</th>
+                </tr>
+              </slot>
+            </thead>
+            <tbody>
+              <tr v-for="(row, i) in tabelError.data" :key="i">
+                <td style="font-size: 13px; text-align: center;">{{ row.attribute }}</td>
+                <td style="font-size: 13px; text-align: center;">{{ row.errors }}</td>
+                <td style="font-size: 13px; text-align: center;">{{ row.row }}</td>
+                <td style="font-size: 13px; text-align: center;">{{ row.values }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- footer -->
+    <div class="row float-right mt-5">
+      <div class="col-6"> 
+      </div>
+      <div class="col-2" style="margin-right: 20px;">
+        <argon-button  variant="gradient" color="secondary" size="sm" width="1" @click="formImport.show = false">Close</argon-button>
+      </div>
+      <div class="col-1">
+        <button type="primary" class="btn btn-sm btn-info btn-fill" @click="importData()" :disabled="onLoading">
+          <span v-if="onLoading"><i class="fa fa-spinner fa-spin"></i> Please Wait...</span>
+          <span v-else>
+              <span>Import</span>
+          </span>
+        </button>
+        <!-- <argon-button variant="gradient" color="success" size="sm" width="1" @click="get(), formImport.show = false">Import</argon-button> -->
+      </div>
+    </div>
+    <!-- end footer -->
+    </vue-final-modal>
+  </div>
 </template>
 
 <script>
 import ArgonButton from "@/components/ArgonButton.vue";
 import { VueFinalModal } from 'vue-final-modal'
-import ArgonPagination from "@/components/ArgonPagination.vue";
-import ArgonPaginationItem from "@/components/ArgonPaginationItem.vue";
+// import ArgonPagination from "@/components/ArgonPagination.vue";
+// import ArgonPaginationItem from "@/components/ArgonPaginationItem.vue";
 import Api from '@/helpers/api';
+import config from '@/configs/config';
 import dataKaryawan from '@/services/dataKaryawan.service';
 
 export default {
@@ -197,8 +269,8 @@ export default {
   components: {
     ArgonButton,
     VueFinalModal,
-    ArgonPagination,
-    ArgonPaginationItem,
+    // ArgonPagination,
+    // ArgonPaginationItem,
   },
   data() {
     return {
@@ -210,7 +282,17 @@ export default {
         title: "Add Data",
         show: false
       },
-      // showModal: false,
+      formImport: {
+        add: true,
+        title: "Import Data Karyawan",
+        show: false
+      },
+      dataImport: '',
+      onLoading: false,
+      tabelError: {
+        data: []
+      },
+      storageUrl : config.storageUrl,
       karyawan: {},
       search: '',
     };
@@ -237,29 +319,29 @@ export default {
       this.form.title = "Add Data";
       this.karyawan   = {};
     },
-    edit(id) {
-      let context = this;               
-      Api(context, dataKaryawan.show(id)).onSuccess(function(response) {
-        console.log(response.data.data)
-          context.karyawan   = response.data.data;
-          context.form.show  = true;
-          context.form.title = 'Edit Data';       
-      })
-      .call()        
-    },
+    // edit(id) {
+    //   let context = this;               
+    //   Api(context, dataKaryawan.show(id)).onSuccess(function(response) {
+    //     console.log(response.data.data)
+    //       context.karyawan   = response.data.data;
+    //       context.form.show  = true;
+    //       context.form.title = 'Edit Data';       
+    //   })
+    //   .call()        
+    // },
     save(){
       let api      = null;
       let context  = this;
       let formData = new FormData();
 
-      if (context.karyawan.nama != undefined && context.karyawan.jabatan != undefined && context.karyawan.unit != undefined && context.karyawan.status != undefined && context.karyawan.gaji_pokok != undefined && context.karyawan.total_cuti != undefined) {
+      if (context.karyawan.nama != undefined && context.karyawan.jabatan != undefined && context.karyawan.unit != undefined && context.karyawan.status != undefined) {
         formData.append('id_karyawan', context.karyawan.id_karyawan);
         formData.append('nama', context.karyawan.nama);
-        // formData.append('nik', (this.karyawan.nik == undefined) ? '' : this.karyawan.nik);
+        formData.append('nik', (this.karyawan.nik == undefined) ? '' : this.karyawan.nik);
         formData.append('jabatan', context.karyawan.jabatan);
         formData.append('unit', context.karyawan.unit);
         formData.append('status', context.karyawan.status);
-        formData.append('gaji_pokok', context.karyawan.gaji_pokok);
+        // formData.append('gaji_pokok', context.karyawan.gaji_pokok);
         formData.append('harian', (this.karyawan.harian == undefined) ? '' : this.karyawan.harian);
         formData.append('bulanan', (this.karyawan.bulanan == undefined) ? '' : this.karyawan.bulanan);
         formData.append('tj_jabatan_skill', (this.karyawan.tj_jabatan_skill == undefined) ? '' : this.karyawan.tj_jabatan_skill);
@@ -270,7 +352,7 @@ export default {
         formData.append('an_rek', (this.karyawan.an_rek == undefined) ? '' : this.karyawan.an_rek);
         formData.append('no_bpjs_tk', (this.karyawan.no_bpjs_tk == undefined) ? '' : this.karyawan.no_bpjs_tk);
         formData.append('no_bpjs_kes', (this.karyawan.no_bpjs_kes == undefined) ? '' : this.karyawan.no_bpjs_kes);
-        formData.append('total_cuti', context.karyawan.total_cuti);
+        // formData.append('total_cuti', context.karyawan.total_cuti);
       }else{
         return alert('Field Bintang Merah Wajib Di Isi')
       }
@@ -302,6 +384,40 @@ export default {
             // context.notifyVue('Data Berhasil di Hapus', 'top', 'right', 'info')
         }).call();
       }
+    },
+    modalImport(){
+      this.formImport.show  = true;
+      this.formImport.title = "Import Data Karyawan";
+      this.tabelError.data  = [];
+    },
+    filesChange(e) {
+        this.dataImport = e.target.files[0];
+    },
+    importData(){
+      let api = null;
+      let context = this;
+      let formData = new FormData();
+      this.onLoading = true;
+
+      if (this.dataImport != undefined) {
+        formData.append('import_data', this.dataImport);
+      }else{
+        return alert('File Import Not Found')
+      }
+
+      api = Api(context, dataKaryawan.import(formData));
+      api.onSuccess(function(response) {
+          context.onLoading = false;
+          context.get();
+          context.formImport.show = false;
+          // context.notifyVue('Data Berhasil di Import', 'top', 'right', 'info')
+      }).onError(function(error) {      
+          context.tabelError.data = error.response.data.data;              
+          // context.notifyVue('Data Gagal di Import' , 'top', 'right', 'danger')
+          context.onLoading = false;
+      }).onFinish(function() {  
+      })
+      .call();
     },
   }
 };

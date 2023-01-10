@@ -1,34 +1,41 @@
 <template>
   <div class="py-4 container-fluid">
-    <argon-button color="info" size="sm" class="mb-3" variant="gradient" style="margin-right: 10px;"><i class="fa fa-download fa-sm"></i> Export</argon-button>
-    <argon-button color="warning" size="sm" class="mb-3" variant="gradient"><i class="fa fa-upload fa-sm"></i> Import</argon-button>
+    <a :style="search.periode_start == '' ? 'margin-right: 10px; pointer-events: none; cursor: default;' : 'margin-right: 10px;'" style="margin-right: 10px;" :href="apiUrl+'export-excel/payroll?periode_start='+search.periode_start+'&periode_end='+search.periode_end+'&nama='+search.nama+''" target="_BLANK"><argon-button :disabled="search.periode_start == ''" color="primary" size="sm" class="mb-3" variant="gradient"><i class="fa fa-file-excel-o" style="margin-right: 5px;"></i> Export Excel</argon-button></a>
+    <argon-button color="warning" size="sm" class="mb-3" variant="gradient"><i class="fa fa-file-pdf-o" style="margin-right: 5px;"></i> Export PDF</argon-button>
     <div class=" row">
       <div class="col-12">
           <div class="card"> 
             <div class="row">
-              <div class="col-4">
+              <div class="col-2">
                 <div class="card-header pb-0">
                   <h6>Data Payroll</h6>
                 </div>
               </div>
-              <div class="col-4">
+              <div class="col-5">
+                <p style="margin-top: 25px; font-weight: bold; padding-left: 85px;">PERIODE {{ moment(search.periode_start).locale('id').format('D MMMM').toUpperCase() }} - {{ moment(search.periode_end).locale('id').format('D MMMM YYYY').toUpperCase() }}</p>
               </div>
-              <div class="col-4 float-right">
+              <div class="col-5 float-right">
                 <argon-button
-                  style="margin-right: 10px; margin-left: 60px;"
+                  style="margin-right: 10px; margin-left: 100px;"
                   class="mt-4"
                   variant="gradient"
                   color="secondary"
                   size="sm"
                   @click="filter()"
-                ><i class="fa fa-filter fa-sm" aria-hidden="true"></i> Filter</argon-button>
+                ><i class="fa fa-filter fa-sm" aria-hidden="true" style="margin-right: 5px;"></i> Filter</argon-button>
                 <argon-button
                   class="mt-4"
                   variant="gradient"
                   color="success"
                   size="sm"
-                  @click="create()"
-                ><i class="fa fa-plus fa-sm" aria-hidden="true"></i> Add New</argon-button>
+                  @click="sendSlip()"
+                  :disabled="onLoading == true || search.periode_start == ''"
+                >
+                  <span v-if="onLoading"><i class="fa fa-spinner fa-spin"></i> Please Wait...</span>
+                  <span v-else>
+                      <span><i class="fa fa-paper-plane fa-sm" style="margin-right: 5px;" aria-hidden="true"></i> Send Slip</span>
+                  </span>
+                </argon-button>
               </div>
             </div>
             
@@ -38,12 +45,13 @@
                   <thead>
                     <tr style="color: white;">
                       <th colspan="9" class="text-uppercase text-xxs font-weight-bolder text-center">Basic Data</th>
-                      <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">Lembur</th>
-                      <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">OT</th>
                       <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">Alpa</th>
                       <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">HK</th>
+                      <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">OT</th>
+                      <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">Lembur</th>
+                      <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">Bonus</th>
                       <th rowspan="2" style="background-color: #BDB76B;" class="text-uppercase text-xxs font-weight-bolder align-middle">Total Gaji</th>
-                      <th colspan="10" style="background-color: dimgrey;" class="text-uppercase text-xxs font-weight-bolder text-center">Potongan</th>
+                      <th colspan="11" style="background-color: dimgrey;" class="text-uppercase text-xxs font-weight-bolder text-center">Potongan</th>
                       <th colspan="8" style="background-color: #00CED1;" class="text-uppercase text-xxs font-weight-bolder text-center">Final Salary</th>
                     </tr>
                     <tr style="color: white;">
@@ -65,7 +73,8 @@
                       <th class="text-uppercase text-xxs font-weight-bolder ">JKK</th>
                       <th class="text-uppercase text-xxs font-weight-bolder ">JP</th>
                       <th class="text-uppercase text-xxs font-weight-bolder ">JKS</th>
-                      <th class="text-uppercase text-xxs font-weight-bolder ">BPJS</th>
+                      <th class="text-uppercase text-xxs font-weight-bolder ">TOTAL POTONGAN BPJS</th>
+                      <th class="text-uppercase text-xxs font-weight-bolder ">TOTAL POTONGAN</th>
                       <th style="background-color: #90EE90;" class="text-uppercase text-xxs font-weight-bolder ">Gaji Diterima</th>
                       <th style="background-color: #90EE90;" class="text-uppercase text-xxs font-weight-bolder ">Sudah Di TF</th>
                       <th style="background-color: #90EE90;" class="text-uppercase text-xxs font-weight-bolder ">Kekurangan</th>
@@ -91,95 +100,149 @@
                         <p class="text-xs font-weight-bold mb-0">{{ row.unit }}</p>
                         <p class="text-xs font-weight-bold mb-0">{{ row.id_karyawan }}</p>
                       </td>
+                      <!-- STATUS -->
                       <td class="align-middle text-center text-sm">
                         <span class="badge badge-sm bg-gradient-success">{{ row.status }}</span>
                       </td>
+                      <!-- HARIAN -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.harian) }}</span>
                       </td>
+                      <!-- BULANAN -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.bulanan) }}</span>
                       </td>
+                      <!-- GAJI POKOK -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(((row.harian == 0) ? ((row.bulanan / 22) * row.total_kerja_count) : (row.harian * row.total_kerja_count) )) }}</span>
+                        <span class="text-secondary text-xs font-weight-bold" v-if="row.rel_payroll != null">
+                          {{ convertRp(Math.round(((row.harian == 0) ? ((row.bulanan / row.rel_payroll.periode_total_hk) * row.total_kerja_count) : (row.harian * row.total_kerja_count) ))) }}
+                        </span>
                       </td>
+                      <!-- TJ SKILL -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.tj_jabatan_skill) }}</span>
                       </td>
+                      <!-- TRANSPORT -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.transport) }}</span>
                       </td>
+                      <!-- U. MAKAN -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ convertRp((row.makan * row.total_kerja_count)) }}</span>
                       </td>
-                      <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619)) }}</span>
-                      </td>
-                      <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ row.total_ot_count }}</span>
-                      </td>
+                      <!-- TOTAL ALPA -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ row.total_alpa_count }}</span>
                       </td>
+                      <!-- TOTAL HK -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ row.total_kerja_count }}</span>
                       </td>
+                      <!-- TOTAL OT -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Number(((row.harian == 0) ? ((row.bulanan / 22) * row.total_kerja_count) : (row.harian * row.total_kerja_count) ) + row.tj_jabatan_skill + row.transport + (row.makan * row.total_kerja_count) + row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619)) - Number(row.total_alpa_count)) }}</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ row.total_ot_count }}</span>
                       </td>
+                      <!-- LEMBUR -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">POTONGAN</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619)) }}</span>
                       </td>
+                      <!-- BONUS -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">PINJAMAN</span>
+                        <span class="text-secondary text-xs font-weight-bold">BONUS</span>
                       </td>
+                      <!-- TOTAL GAJI -->
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs font-weight-bold" v-if="row.rel_payroll != null">
+                          {{ convertRp(Math.round(Number(((row.harian == 0) ? ((row.bulanan / row.rel_payroll.periode_total_hk) * row.total_kerja_count) : (row.harian * row.total_kerja_count) ) + row.tj_jabatan_skill + row.transport + (row.makan * row.total_kerja_count) + row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619))) ) }}
+                        </span>
+                      </td>
+                      <!-- PIUTANG -->
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs font-weight-bold" v-if="row.rel_payroll != null">
+                          <input style="border: 1px solid transparent; background: transparent; text-align: center;" size="8" v-model="row.rel_payroll.piutang" @change="updatePayroll(row.rel_payroll.id, row.rel_payroll.piutang, row.rel_payroll.pinjaman, row.rel_payroll.kekurangan, row.rel_payroll.status_tf, row.rel_payroll.send_slip)">
+                        </span>
+                      </td>
+                      <!-- PINJAMAN -->
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs font-weight-bold" v-if="row.rel_payroll != null">
+                          <input style="border: 1px solid transparent; background: transparent; text-align: center;" size="8" v-model="row.rel_payroll.pinjaman" @change="updatePayroll(row.rel_payroll.id, row.rel_payroll.piutang, row.rel_payroll.pinjaman, row.rel_payroll.kekurangan, row.rel_payroll.status_tf, row.rel_payroll.send_slip)">
+                        </span>
+                      </td>
+                      <!-- PPH21 -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">PPH21</span>
                       </td>
+                      <!-- UPAH BPJS -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.upah_bpjs) }}</span>
                       </td>
+                      <!-- JHT -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.upah_bpjs * Number(row.jht)) }}</span>
                       </td>
+                      <!-- JKM -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.upah_bpjs * Number(row.jkm)) }}</span>
                       </td>
+                      <!-- JKK -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.upah_bpjs * Number(row.jkk)) }}</span>
                       </td>
+                      <!-- JP -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.upah_bpjs * Number(row.jp)) }}</span>
                       </td>
+                      <!-- JKS -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Number(row.jks) * Number(4309772)) }}</span>
                       </td>
+                      <!-- TOTAL POTONGAN BPJS -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Number(row.upah_bpjs * Number(row.jht) +  row.upah_bpjs * Number(row.jkm) + row.upah_bpjs * Number(row.jkk) + row.upah_bpjs * Number(row.jp) + Number(row.jks) * Number(4309772))) }}</span>
                       </td>
+                      <!-- TOTAL POTONGAN -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Number(((row.harian == 0) ? ((row.bulanan / 22) * row.total_kerja_count) : (row.harian * row.total_kerja_count) ) + row.tj_jabatan_skill + row.transport + (row.makan * row.total_kerja_count) + row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619)) - Number(row.total_alpa_count) - Number(row.upah_bpjs * Number(row.jht) +  row.upah_bpjs * Number(row.jkm) + row.upah_bpjs * Number(row.jkk) + row.upah_bpjs * Number(row.jp) + Number(row.jks) * Number(4309772)) ) }}</span>
+                        <span v-if="row.rel_payroll != null">
+                          <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Number(row.rel_payroll.piutang + row.rel_payroll.pinjaman + row.upah_bpjs * Number(row.jht) +  row.upah_bpjs * Number(row.jkm) + row.upah_bpjs * Number(row.jkk) + row.upah_bpjs * Number(row.jp) + Number(row.jks) * Number(4309772))) }}</span>
+                        </span>
                       </td>
+                      <!-- GAJI DITERIMA -->
+                      <td class="align-middle text-center" v-if="row.rel_payroll != null">
+                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Math.round(Number(((row.harian == 0) ? ((row.bulanan / row.rel_payroll.periode_total_hk) * row.total_kerja_count) : (row.harian * row.total_kerja_count) ) + row.tj_jabatan_skill + row.transport + (row.makan * row.total_kerja_count) + row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619)) - ( Number(row.rel_payroll.piutang + row.rel_payroll.pinjaman) + Number(row.upah_bpjs * Number(row.jht) +  row.upah_bpjs * Number(row.jkm) + row.upah_bpjs * Number(row.jkk) + row.upah_bpjs * Number(row.jp) + Number(row.jks) * Number(4309772))) )) }}</span>
+                      </td>
+                      <!-- STATUS TF -->
                       <td class="align-middle text-center">
-                        <input type="checkbox" >
+                        <span v-if="row.rel_payroll != null">
+                          <input type="checkbox" v-model="row.rel_payroll.status_tf" @change="updatePayroll(row.rel_payroll.id, row.rel_payroll.piutang, row.rel_payroll.pinjaman, row.rel_payroll.kekurangan, row.rel_payroll.status_tf, row.rel_payroll.send_slip)">
+                        </span>
                       </td>
+                      <!-- KEKURANGAN -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">INPUT</span>
+                        <span class="text-secondary text-xs font-weight-bold" v-if="row.rel_payroll != null">
+                          <input style="border: 1px solid transparent; background: transparent; text-align: center;" size="8" v-model="row.rel_payroll.kekurangan" @change="updatePayroll(row.rel_payroll.id, row.rel_payroll.piutang, row.rel_payroll.pinjaman, row.rel_payroll.kekurangan, row.rel_payroll.status_tf, row.rel_payroll.send_slip)">
+                        </span>
                       </td>
+                      <!-- NO REK -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ row.no_rek }}</span>
                       </td>
+                      <!-- AN REK -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ row.an_rek }}</span>
                       </td>
+                      <!-- BANK -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ row.bank }}</span>
                       </td>
+                      <!-- DETAIL SLIP -->
                       <td class="align-middle text-center text-sm">
-                        <router-link :to="/detail-slip/+row.id_karyawan"><span class="badge badge-sm bg-gradient-info">Slip</span></router-link>
+                        <router-link :to="/detail-slip/+row.id_karyawan+'/'+search.periode_start+'/'+search.periode_end"><span class="badge badge-sm bg-gradient-info">Slip</span></router-link>
                       </td>
+                      <!-- SEND SLIP -->
                       <td class="align-middle text-center">
-                        <input type="checkbox" >
+                        <span v-if="row.rel_payroll != null">
+                          <input type="checkbox" v-model="row.rel_payroll.send_slip" @change="updatePayroll(row.rel_payroll.id, row.rel_payroll.piutang, row.rel_payroll.pinjaman, row.rel_payroll.kekurangan, row.rel_payroll.status_tf, row.rel_payroll.send_slip)">
+                        </span>
                       </td>
                     </tr>
                     <!-- <tr>
@@ -243,6 +306,7 @@
 import ArgonButton from "@/components/ArgonButton.vue";
 import { VueFinalModal } from 'vue-final-modal'
 import Api from '@/helpers/api';
+import config from '@/configs/config';
 import dataPayroll from '@/services/dataPayroll.service';
 var moment = require('moment');
 
@@ -263,6 +327,7 @@ export default {
         title: "Filter",
         show: false
       },
+      onLoading: false,
       // karyawan: {},
       // totalSakitAll: '',
       // totalIjinAll: '',
@@ -275,7 +340,8 @@ export default {
         periode_start: '',
         periode_end: '',
       },
-      backgroundRed: null
+      backgroundRed: null,
+      apiUrl :config.apiUrl,
     };
   },
   mounted(){
@@ -299,14 +365,17 @@ export default {
       this.formFilter.show  = true;
       this.formFilter.title = "Filter";
     },
-    updateAbsen(id, value, type){
+    updatePayroll(id, piutang, pinjaman, kekurangan, status_tf, send_slip){
       let api     = null;
       let context = this;
 
-      api = Api(context, dataPayroll.updateAbsen({
+      api = Api(context, dataPayroll.updatePayroll({
           id: id,
-          value: value,
-          type: type,
+          piutang: piutang,
+          pinjaman: pinjaman,
+          kekurangan: kekurangan,
+          status_tf: status_tf,
+          send_slip: send_slip,
       }));
       api.onSuccess(function(response) {
           // context.notifyVue(response.data.message, 'top', 'right', 'info')
@@ -316,6 +385,21 @@ export default {
           context.get();
       })
       .call();
+    },
+    sendSlip(){
+      let context    = this;       
+      this.onLoading = true;
+
+      Api(context, dataPayroll.sendSlip({periode_start: context.search.periode_start, periode_end: context.search.periode_end})).onSuccess(function(response) {    
+          // context.absenKaryawan.data = response.data;
+      }).onError(function(error) {                    
+          if (error.response.status == 404) {
+              // context.table.data = [];
+          }
+      }).onFinish(function() {  
+          context.onLoading = false;
+      })
+      .call()
     },
     setBg(id) {
       this.backgroundRed = id

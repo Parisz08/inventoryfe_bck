@@ -42,7 +42,7 @@ const routes = [
     component: DataPayroll,
   },
   {
-    path: '/detail-slip/:id_karyawan',
+    path: '/detail-slip/:id_karyawan/:periode_start/:periode_end',
     name: 'DetailSlip',
     component: DetailSlip
   },
