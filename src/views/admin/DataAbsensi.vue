@@ -1,6 +1,6 @@
 <template>
   <div class="py-4 container-fluid">
-    <argon-button color="info" size="sm" class="mb-3" variant="gradient" style="margin-right: 10px;"><i class="fa fa-download fa-sm"></i> Export</argon-button>
+    <a :style="search.periode_start == '' ? 'margin-right: 10px; pointer-events: none; cursor: default;' : 'margin-right: 10px;'" style="margin-right: 10px;" :href="apiUrl+'export-excel/absen?periode_start='+search.periode_start+'&periode_end='+search.periode_end+'&nama='+search.nama+''" target="_BLANK"><argon-button :disabled="search.periode_start == ''" color="primary" size="sm" class="mb-3" variant="gradient"><i class="fa fa-file-excel-o" style="margin-right: 5px;"></i> Export Excel</argon-button></a>
     <argon-button color="warning" size="sm" class="mb-3" variant="gradient"><i class="fa fa-upload fa-sm"></i> Import</argon-button>
     <div class=" row">
       <div class="col-12">
@@ -141,7 +141,12 @@
           <argon-button  variant="gradient" color="secondary" size="sm" width="1" @click="form.show = false">Close</argon-button>
         </div>
         <div class="col-1">
-          <argon-button variant="gradient" color="success" size="sm" width="1" @click="save()">Save</argon-button>
+          <argon-button variant="gradient" color="success" size="sm" width="1" @click="save()" :disabled="onLoading == true">
+            <span v-if="onLoading"><i class="fa fa-spinner fa-spin"></i> Please Wait...</span>
+            <span v-else>
+                <span> Save</span>
+            </span>
+          </argon-button>
         </div>
       </div>
       <!-- end footer -->
@@ -177,7 +182,12 @@
           <argon-button  variant="gradient" color="secondary" size="sm" width="1" @click="formFilter.show = false">Close</argon-button>
         </div>
         <div class="col-1">
-          <argon-button variant="gradient" color="success" size="sm" width="1" @click="getAbsen(), formFilter.show = false">Filter</argon-button>
+          <argon-button variant="gradient" color="success" size="sm" width="1" @click="getAbsen()" :disabled="onLoading == true">
+            <span v-if="onLoading"><i class="fa fa-spinner fa-spin"></i> Please Wait...</span>
+            <span v-else>
+                <span> Filter</span>
+            </span>
+          </argon-button>
         </div>
       </div>
       <!-- end footer -->
@@ -189,6 +199,7 @@
 import ArgonButton from "@/components/ArgonButton.vue";
 import { VueFinalModal } from 'vue-final-modal'
 import Api from '@/helpers/api';
+import config from '@/configs/config';
 // import dataKaryawan from '@/services/dataKaryawan.service';
 import dataAbsensi from '@/services/dataAbsensi.service';
 var moment = require('moment');
@@ -202,6 +213,7 @@ export default {
   data() {
     return {
       moment:moment,
+      onLoading: false,
       absenKaryawan: {
         data: []
       },
@@ -230,7 +242,8 @@ export default {
         periode_start: '',
         periode_end: '',
       },
-      backgroundRed: null
+      backgroundRed: null,
+      apiUrl :config.apiUrl,
     };
   },
   mounted(){
@@ -251,7 +264,9 @@ export default {
     //   .call()
     // },
     getAbsen(){
-      let context = this;               
+      let context = this;    
+      this.onLoading = true;
+
       Api(context, dataAbsensi.index({nama: context.search.nama, periode_start: context.search.periode_start, periode_end: context.search.periode_end,})).onSuccess(function(response) {    
           context.tableAbsen.data    = response.data.data.data;
           context.absenKaryawan.data = response.data.data.absenKaryawan;
@@ -266,6 +281,9 @@ export default {
           if (error.response.status == 404) {
               context.table.data = [];
           }
+      }).onFinish(function() { 
+         context.onLoading = false;
+         context.formFilter.show  = false;
       })
       .call()
     },
@@ -273,15 +291,18 @@ export default {
       this.formFilter.add   = true;
       this.formFilter.show  = true;
       this.formFilter.title = "Filter";
+      this.onLoading = false;
     },
     create() {
       this.form.add   = true;
       this.form.show  = true;
       this.form.title = "Create Periode Absensi";
+      this.onLoading = false;
     },
     save(){
       let api      = null;
       let context  = this;
+      this.onLoading = true;
       let formData = new FormData();
 
       if (context.karyawan.periode_start != undefined && context.karyawan.periode_end != undefined) {
@@ -303,7 +324,8 @@ export default {
       // eslint-disable-next-line no-unused-vars
       }).onError(function(error) {                    
           // context.notifyVue((context.formTitle === 'Create Periode Absensi') ? 'Data Gagal di Simpan' : 'Data Gagal di Update' , 'top', 'right', 'danger')
-      }).onFinish(function() {  
+      }).onFinish(function() { 
+         context.onLoading = false; 
       })
       .call();
     },

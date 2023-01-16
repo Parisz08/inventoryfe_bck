@@ -1,6 +1,7 @@
 <template>
   <div class="py-4 container-fluid">
-    <argon-button color="info" size="sm" class="mb-3" variant="gradient" style="margin-right: 10px;"><i class="fa fa-download fa-sm"></i> Export</argon-button>
+    <a class="btn btn-sm btn-primary" style="margin-right: 10px;" :href="apiUrl+'export-excel/karyawan?id_karyawan='+search.id_karyawan+'&nama='+search.nama+'&nik='+search.nik+'&jabatan='+search.jabatan+'&unit='+search.unit+'&status='+search.status+''" target="_BLANK"><i class="fa fa-download fa-sm"></i> Export</a>
+    <!-- <argon-button color="info" size="sm" class="mb-3" variant="gradient" style="margin-right: 10px;"><i class="fa fa-download fa-sm"></i> Export</argon-button> -->
     <argon-button color="warning" size="sm" class="mb-3" variant="gradient" @click="modalImport()"><i class="fa fa-upload fa-sm"></i> Import</argon-button>
     <div class=" row">
       <div class="col-12">
@@ -20,6 +21,7 @@
                   variant="gradient"
                   color="secondary"
                   size="sm"
+                  @click="filter()"
                 ><i class="fa fa-filter fa-sm" aria-hidden="true"></i> Filter</argon-button>
                 <argon-button
                   class="mt-4"
@@ -125,7 +127,7 @@
     </div>
   </div>
 
-  <!-- Modal -->
+  <!-- =======  MODAL ADD DATA ======= -->
   <div class="container">
     <vue-final-modal v-model="form.show" classes="modal-container" content-class="modal-content" :z-index="10000">
       <!-- header -->
@@ -139,8 +141,8 @@
       </div><hr>
       <!-- end header -->
       <div class="modal__content container">
-        <label for="example-text-input" class="form-control-label mt-3">ID Karyawan <span style="color: red;">*</span></label>
-        <input type="text" class="form-control" placeholder="ID Karyawan" v-model="karyawan.id_karyawan">
+        <!-- <label for="example-text-input" class="form-control-label mt-3">ID Karyawan <span style="color: red;">*</span></label>
+        <input type="text" class="form-control" placeholder="ID Karyawan" v-model="karyawan.id_karyawan"> -->
         <label for="example-text-input" class="form-control-label mt-3">Nama <span style="color: red;">*</span></label>
         <input type="text" class="form-control" placeholder="Nama" v-model="karyawan.nama" required>
         <label for="example-text-input" class="form-control-label mt-3">NIK</label>
@@ -185,6 +187,48 @@
         </div>
         <div class="col-1">
           <argon-button variant="gradient" color="success" size="sm" width="1" @click="save()">Save</argon-button>
+        </div>
+      </div>
+      <!-- end footer -->
+    </vue-final-modal>
+   </div>
+
+   <!-- =======  MODAL FILTER ======= -->
+  <div class="container">
+    <vue-final-modal v-model="formFilter.show" classes="modal-container" content-class="modal-content" :z-index="10000">
+      <!-- header -->
+      <div class="row">
+        <div class="col-11 float-left">
+          <span class="modal__title">{{formFilter.title}}</span>
+        </div>
+        <div class="col-1 float-right">
+          <i style="cursor: pointer;" class="fa fa-times" aria-hidden="true" @click="formFilter.show = false"></i>
+        </div>
+      </div><hr>
+      <!-- end header -->
+      <div class="modal__content container">
+        <label for="example-text-input" class="form-control-label mt-3">ID Karyawan</label>
+        <input type="text" class="form-control" placeholder="ID Karyawan" v-model="search.id_karyawan">
+        <label for="example-text-input" class="form-control-label mt-3">Nama</label>
+        <input type="text" class="form-control" placeholder="Nama" v-model="search.nama" required>
+        <label for="example-text-input" class="form-control-label mt-3">NIK</label>
+        <input type="text" class="form-control" placeholder="NIK" v-model="search.nik">
+        <label for="example-text-input" class="form-control-label mt-3">Jabatan</label>
+        <input type="text" class="form-control" placeholder="Jabatan" v-model="search.jabatan" required>
+        <label for="example-text-input" class="form-control-label mt-3">Unit</label>
+        <input type="text" class="form-control" placeholder="Unit" v-model="search.unit" required>
+        <label for="example-text-input" class="form-control-label mt-3">Status</label>
+        <input type="text" class="form-control" placeholder="Status" v-model="search.status" required>
+      </div>
+      <!-- footer -->
+      <div class="row float-right mt-3">
+        <div class="col-6"> 
+        </div>
+        <div class="col-2" style="margin-right: 20px;">
+          <argon-button  variant="gradient" color="secondary" size="sm" width="1" @click="formFilter.show = true">Close</argon-button>
+        </div>
+        <div class="col-1">
+          <argon-button variant="gradient" color="success" size="sm" width="1" @click="get()">Filter</argon-button>
         </div>
       </div>
       <!-- end footer -->
@@ -287,6 +331,11 @@ export default {
         title: "Import Data Karyawan",
         show: false
       },
+      formFilter: {
+        add: true,
+        title: "Filter",
+        show: false
+      },
       dataImport: '',
       onLoading: false,
       tabelError: {
@@ -294,7 +343,15 @@ export default {
       },
       storageUrl : config.storageUrl,
       karyawan: {},
-      search: '',
+      search: {
+        id_karyawan: '',
+        nama: '',
+        nik: '',
+        jabatan: '',
+        unit: '',
+        status: '',
+      },
+      apiUrl :config.apiUrl,
     };
   },
   mounted(){
@@ -304,14 +361,22 @@ export default {
   methods: {
     get(param){
       let context = this;               
-      Api(context, dataKaryawan.index({search: this.search})).onSuccess(function(response) {    
-          context.table.data = response.data.data.data.data;
+      Api(context, dataKaryawan.index({id_karyawan: context.search.id_karyawan, nama: context.search.nama, nik: context.search.nik, jabatan: context.search.jabatan, unit: context.search.unit, status: context.search.status,})).onSuccess(function(response) {    
+          context.table.data = response.data.data.data;
       }).onError(function(error) {                    
           if (error.response.status == 404) {
               context.table.data = [];
           }
+      }).onFinish(function() { 
+         context.formFilter.show  = false;
       })
       .call()
+    },
+    filter() {
+      this.formFilter.add   = true;
+      this.formFilter.show  = true;
+      this.formFilter.title = "Filter";
+      this.onLoading = false;
     },
     create() {
       this.form.add   = true;

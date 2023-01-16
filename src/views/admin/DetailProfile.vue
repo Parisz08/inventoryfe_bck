@@ -180,8 +180,7 @@ export default {
     get() {
       let context = this;               
       Api(context, dataKaryawan.show(context.$route.params.id_karyawan)).onSuccess(function(response) {
-          context.karyawan = response.data.data; 
-          console.log(response.data.data)              
+          context.karyawan = response.data.data;         
       })
       .call()        
     },
@@ -220,12 +219,23 @@ export default {
           total_cuti: context.karyawan.total_cuti,
         }));
       api.onSuccess(function(response) {
-          // context.notifyVue(response.data.message, 'top', 'right', 'info')
+          context.notifyVue('ok', 'top', 'right', 'info')
       }).onError(function(error) { 
           // context.notifyVue('Update Failed', 'top', 'right', 'danger')
       }).onFinish(function() {  
       })
       .call();
+    },
+    notifyVue(message, verticalAlign, horizontalAlign, type) {
+      const color = Math.floor((Math.random() * 4) + 1)
+      this.$notifications.notify(
+      {
+          message: message,
+          icon: 'nc-icon nc-notification-70',
+          horizontalAlign: horizontalAlign,
+          verticalAlign: verticalAlign,
+          type: type
+      })
     },
   },
   beforeMount() {

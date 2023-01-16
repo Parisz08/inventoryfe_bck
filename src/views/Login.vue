@@ -32,19 +32,17 @@
               <p class="text-sm font-weight-bold mb-2 text-secondary text-border d-inline z-index-2 bg-white px-3"></p>
             </div>
             <div class="card-body">
-              <form role="form">
-                <input type="text" class="form-control mb-3" placeholder="Username" v-model="username" v-on:keyup.enter="tes()" required>
+              <!-- <form role="form"> -->
+                <input type="text" class="form-control mb-3" placeholder="Username" v-model="username" v-on:keyup.enter="login()" required>
                 <input type="password" class="form-control mb-3" placeholder="Password" v-model="password" v-on:keyup.enter="login()" required>
                 <div class="text-center">
-
-                  <button type="primary" class="my-4 btn btn-primary btn-outline-dark" @click="Login()" :disabled="onLoading">
+                  <button type="primary" class="my-4 btn btn-primary btn-outline-dark" @click="login()" :disabled="onLoading">
                       <span v-if="onLoading"><i class="fa fa-spinner fa-spin"></i> Please Wait...</span>
                       <span v-else>
                           <span>Login</span>
                       </span>
                   </button>
                 </div>
-              </form>
             </div>
           </div>
         </div>
@@ -58,14 +56,13 @@
 // import Navbar from "@/examples/PageLayout/Navbar.vue";
 import AppFooter from "@/examples/PageLayout/Footer.vue";
 // import ArgonButton from "@/components/ArgonButton.vue";
-const body = document.getElementsByTagName("body")[0];
+// const body = document.getElementsByTagName("body")[0];
 import config from '@/configs/config';
 import axios from 'axios';
 import Api from '@/helpers/api';
 import akun from '@/services/akun.service';
 
 export default {
-  name: "signin",
   components: {
     // Navbar,
     AppFooter,
@@ -73,16 +70,16 @@ export default {
   },
   created() {
     // this.$store.state.hideConfigButton = true;
-    this.$store.state.showNavbar = false;
+    this.$store.state.showNavbar  = false;
     this.$store.state.showSidenav = false;
-    // this.$store.state.showFooter = false;
+    this.$store.state.showFooter  = false;
     // body.classList.remove("bg-gray-100");
   },
   beforeUnmount() {
     // this.$store.state.hideConfigButton = false;
-    this.$store.state.showNavbar = true;
+    this.$store.state.showNavbar  = true;
     this.$store.state.showSidenav = true;
-    // this.$store.state.showFooter = true;
+    this.$store.state.showFooter  = true;
     // body.classList.add("bg-gray-100");
   },
   data() {
@@ -93,9 +90,6 @@ export default {
     };
   },
   methods: {
-    tes(){
-      alert('ok')
-    },
     login() {             
       if (this.username && this.password) {
         var formData = new FormData()
@@ -112,11 +106,11 @@ export default {
             context.onLoading = true;          
             Api(context, akun.indexProfile()).onSuccess(function(response) {
                 var dataRole = response.data.data[0];
-                context.notifyVue('Selamat anda berhasil login '+dataRole.full_name, 'top', 'right', 'info')
+                // context.notifyVue('Selamat anda berhasil login '+dataRole.full_name, 'top', 'right', 'info')
                 localStorage.setItem('role', dataRole.role)
                 localStorage.setItem('username', dataRole.full_name)
                 // if (dataRole.role == 'Admin') {
-                    context.$router.push('/')
+                    context.$router.push('dashboard-default')
                 // }else{
                 //     context.$router.push('/profile')
                 // }

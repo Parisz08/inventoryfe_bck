@@ -2,11 +2,13 @@
   <div class="py-4 container-fluid">
     <div class=" row">
       <div class="col-12">
-          <div class="card" style="margin-top: -80px;"> 
+          <div class="card" style="margin-top: -0px;"> 
             <div class="row">
               <div class="col-12">
                 <div class="card-header pb-0 text-center">
-                  <h6>SLIP GAJI - {{ moment($route.params.periode_start).locale('id').format('MMMM YYYY').toUpperCase() }}</h6><hr>
+                  <argon-button v-if="btnPrintShow" style="margin-left: 800px;" color="warning" size="sm" class="mb-3" variant="gradient" @click="print()"><i class="fa fa-file-pdf-o" style="margin-right: 5px;"></i> Print</argon-button>
+                  <h6>SLIP GAJI - {{ moment($route.params.periode_start).locale('id').format('MMMM YYYY').toUpperCase() }}</h6>
+                  <hr>
                 </div>
               </div>
             </div>
@@ -27,7 +29,7 @@
                 </div>
 
                 <div class="row">
-                  <div class="col-lg-6">
+                  <div class="col-6">
                     <hr>
                     PENERIMAAN
                     <hr style="margin-top: 2px;">
@@ -41,7 +43,7 @@
                       {{ convertRp(slip.transport) }}
                     </p>
                     <p style="margin-top: -10px; font-size: 15px;">U. Makan <span style="margin-left: 70PX; margin-right: 10px;">:</span> 
-                      {{ convertRp((slip.makan * slip.total_kerja_count)) }}
+                      {{ convertRp((slip.makan)) }}
                     </p>
                     <p style="margin-top: -10px; font-size: 15px;">Lembur <span style="margin-left: 82PX; margin-right: 10px;">:</span> 
                       {{ convertRp(slip.total_ot_count * ((slip.unit == 'Head Quarter') ? 250000 : 22619)) }}
@@ -51,24 +53,24 @@
                     </p>
                     <p style="margin-top: -10px; font-size: 15px;">Bonus <span style="margin-left: 92PX; margin-right: 10px;">:</span> -</p>
                   </div>
-                  <div class="col-lg-6">
+                  <div class="col-6">
                     <hr>
                     POTONGAN
                     <hr style="margin-top: 2px;">
                     <p style="font-size: 15px;">JHT <span style="margin-left: 105px; margin-right: 10px;">:</span> 
-                      {{ convertRp(slip.upah_bpjs * Number(slip.jht)) }}
+                      {{ convertRp(slip.jht) }}
                     </p>
                     <p style="margin-top: -10px; font-size: 15px;">JKM <span style="margin-left: 102px; margin-right: 10px;">:</span> 
-                      {{ convertRp(slip.upah_bpjs * Number(slip.jkm)) }}
+                      {{ convertRp(slip.jkm) }}
                     </p>
                     <p style="margin-top: -10px; font-size: 15px;">JKK <span style="margin-left: 106px; margin-right: 10px;">:</span> 
-                      {{ convertRp(slip.upah_bpjs * Number(slip.jkk)) }}
+                      {{ convertRp(slip.jkk) }}
                     </p>
                     <p style="margin-top: -10px; font-size: 15px;">JP <span style="margin-left: 115px; margin-right: 10px;">:</span> 
-                      {{ convertRp(slip.upah_bpjs * Number(slip.jp)) }}
+                      {{ convertRp(slip.jp) }}
                     </p>
                     <p style="margin-top: -10px; font-size: 15px;">JKS <span style="margin-left: 107px; margin-right: 10px;">:</span> 
-                      {{ convertRp(Number(slip.jks) * Number(4309772)) }}
+                      {{ convertRp(slip.jks) }}
                     </p>
                     <p style="margin-top: -10px; font-size: 15px;">PPH21 <span style="margin-left: 82px; margin-right: 10px;">:</span> -</p>
                     <p style="margin-top: -10px; font-size: 15px;">Lainnya <span style="margin-left: 75px; margin-right: 10px;">:</span> 
@@ -81,12 +83,12 @@
                 <hr style="margin-top: 0px;">
                 <div class="row font-weight-bold">
                   <div class="col-6" style="margin-top: -10px;">
-                    TOTAL <span style="margin-left: 150px; margin-right: 30px;"></span> {{ convertRp(Math.round(Number(((slip.harian == 0) ? ((slip.bulanan / slip.rel_payroll.periode_total_hk) * slip.total_kerja_count) : (slip.harian * slip.total_kerja_count) ) + slip.tj_jabatan_skill + slip.transport + (slip.makan * slip.total_kerja_count) + slip.total_ot_count * ((slip.unit == 'Head Quarter') ? 250000 : 22619)) )) }}
+                    TOTAL <span style="margin-left: 100px; margin-right: 30px;"></span> {{ convertRp(Math.round(Number(((slip.harian == 0) ? ((slip.bulanan / slip.rel_payroll.periode_total_hk) * slip.total_kerja_count) : (slip.harian * slip.total_kerja_count) ) + slip.tj_jabatan_skill + slip.transport + (slip.makan) + slip.total_ot_count * ((slip.unit == 'Head Quarter') ? 250000 : 22619)) )) }}
                     <hr style="margin-top: 2px;">
                   </div>
                   <div class="col-6" style="margin-top: -10px;">
                     <span v-if="slip.rel_payroll != null">
-                      TOTAL <span style="margin-left: 150px; margin-right: 30px;"></span> {{ convertRp(Number(slip.upah_bpjs * Number(slip.jht) +  slip.upah_bpjs * Number(slip.jkm) + slip.upah_bpjs * Number(slip.jkk) + slip.upah_bpjs * Number(slip.jp) + Number(slip.jks) * Number(4309772) + (Number(slip.rel_payroll.piutang) + Number(slip.rel_payroll.pinjaman))) ) }}
+                      TOTAL <span style="margin-left: 100px; margin-right: 30px;"></span> {{ convertRp(Number(slip.jht + slip.jkm + slip.jkk + slip.jp + slip.jks + (Number(slip.rel_payroll.piutang) + Number(slip.rel_payroll.pinjaman))) ) }}
                     </span>
                     <hr style="margin-top: 2px;">
                   </div>
@@ -95,7 +97,7 @@
                   <div class="col-12 text-center">
                     <span v-if="slip.rel_payroll != null">
                       <p style="margin-top: 30px; font-weight: bold;">THP <span style="margin-left: 65px; "></span> <span style="border-bottom: 3px double;">
-                        {{ convertRp(Math.round(Number(((slip.harian == 0) ? ((slip.bulanan / slip.rel_payroll.periode_total_hk) * slip.total_kerja_count) : (slip.harian * slip.total_kerja_count) ) + slip.tj_jabatan_skill + slip.transport + (slip.makan * slip.total_kerja_count) + slip.total_ot_count * ((slip.unit == 'Head Quarter') ? 250000 : 22619))  - ((Number(slip.rel_payroll.piutang) + Number(slip.rel_payroll.pinjaman)) + Number(slip.upah_bpjs * Number(slip.jht) +  slip.upah_bpjs * Number(slip.jkm) + slip.upah_bpjs * Number(slip.jkk) + slip.upah_bpjs * Number(slip.jp) + Number(slip.jks) * Number(4309772))) )) }}
+                        {{ convertRp(Math.round(Number(((slip.harian == 0) ? ((slip.bulanan / slip.rel_payroll.periode_total_hk) * slip.total_kerja_count) : (slip.harian * slip.total_kerja_count) ) + slip.tj_jabatan_skill + slip.transport + (slip.makan) + slip.total_ot_count * ((slip.unit == 'Head Quarter') ? 250000 : 22619))  - ((Number(slip.rel_payroll.piutang) + Number(slip.rel_payroll.pinjaman)) + Number(slip.jht + slip.jkm + slip.jkk + slip.jp + slip.jks)) )) }}
                       </span></p>
                     </span>
                   </div>
@@ -117,10 +119,12 @@
 import Api from '@/helpers/api';
 import dataPayroll from '@/services/dataPayroll.service';
 var moment = require('moment');
+import ArgonButton from "@/components/ArgonButton.vue";
 
 export default {
   name: "tables",
   components: {
+    ArgonButton,
   },
   data() {
     return {
@@ -135,18 +139,21 @@ export default {
       },
       slip: {},
       search: '',
+      btnPrintShow: true,
     };
   },
   mounted(){
     this.get();
     this.tokenApi = 'Bearer '+localStorage.getItem('token');
+    window.onafterprint = function(){
+      location.reload()
+    }
   },
   methods: {
     get(){
       let context = this;               
       Api(context, dataPayroll.show({id_karyawan: context.$route.params.id_karyawan, periode_start: context.$route.params.periode_start, periode_end: context.$route.params.periode_end,})).onSuccess(function(response) {    
           context.slip = response.data.data;
-          console.log(response.data.data)
       }).onError(function(error) {                    
           if (error.response.status == 404) {
               context.table.data = [];
@@ -170,6 +177,31 @@ export default {
         }
       }
     },
+    print(){
+      this.btnPrintShow = false;
+      setTimeout(function () {
+        window.print();
+      },1000); // 5 seconds
+    },
+    printClose(){
+      this.btnPrintShow = true
+      alert('ok')
+    }
+  },
+  beforeMount() {
+    // this.$store.state.imageLayout = "profile-overview";
+    this.$store.state.showNavbar = false;
+    this.$store.state.showFooter = false;
+    // this.$store.state.hideConfigButton = true;
+    // body.classList.add("profile-overview");
+  },
+  beforeUnmount() {
+    // this.$store.state.isAbsolute = false;
+    // this.$store.state.imageLayout = "default";
+    this.$store.state.showNavbar = true;
+    this.$store.state.showFooter = false;
+    // this.$store.state.hideConfigButton = false;
+    // body.classList.remove("profile-overview");
   }
 };
 </script>

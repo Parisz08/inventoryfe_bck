@@ -9,7 +9,7 @@
     data-scroll="true"
   >
     <div class="px-3 py-1 container-fluid">
-      <breadcrumbs :currentPage="currentRouteName" textWhite="text-white" />
+      <!-- <breadcrumbs :currentPage="currentRouteName" textWhite="text-white" /> -->
 
       <div
         class="mt-2 collapse navbar-collapse mt-sm-0 me-md-0 me-sm-4"
@@ -54,7 +54,7 @@
               <i class="cursor-pointer fa fa-cog fixed-plugin-button-nav"></i>
             </a>
           </li> -->
-          <li
+          <!-- <li
             class="nav-item dropdown d-flex align-items-center"
             :class="this.$store.state.isRTL ? 'ps-2' : 'pe-2'"
           >
@@ -176,22 +176,11 @@
                 </a>
               </li>
             </ul>
-          </li>
-          <li class="nav-item d-flex align-items-center">
-            <router-link
-              :to="{ name: 'Signin' }"
-              class="px-0 nav-link font-weight-bold text-white"
-              target="_blank"
-            >
-              <i
-                class="fa fa-user"
-                :class="this.$store.state.isRTL ? 'ms-sm-2' : 'me-sm-2'"
-              ></i>
-              <span v-if="this.$store.state.isRTL" class="d-sm-inline d-none"
-                >يسجل دخول</span
-              >
-              <span v-else class="d-sm-inline d-none">Hallo Admin</span>
-            </router-link>
+          </li> -->
+          <li class="nav-item d-flex align-items-center text-white">
+            <!-- <i class="fa fa-user" ></i> -->
+            <span class="d-sm-inline d-none ms-sm-2 me-sm-2">Hallo Admin</span>
+            <i class="fa fa-sign-out" @click="logout()" style="cursor: pointer;" title="Logout"></i>
           </li>
         </ul>
       </div>
@@ -199,7 +188,7 @@
   </nav>
 </template>
 <script>
-import Breadcrumbs from "../Breadcrumbs.vue";
+// import Breadcrumbs from "../Breadcrumbs.vue";
 import { mapMutations, mapActions } from "vuex";
 
 export default {
@@ -220,10 +209,15 @@ export default {
     toggleSidebar() {
       this.toggleSidebarColor("bg-white");
       this.navbarMinimize();
-    }
+    },
+    logout(){
+      localStorage.removeItem('token');
+      localStorage.setItem('authenticated', false)  
+      this.$router.push('/login')
+    },
   },
   components: {
-    Breadcrumbs
+    // Breadcrumbs
   },
   computed: {
     currentRouteName() {

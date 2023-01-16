@@ -35,7 +35,7 @@
           class="navbar-brand-img h-100"
           alt="main_logo"
         />
-        <span class="ms-2 font-weight-bold me-2">Digaji-In BCK</span>
+        <span class="ms-2 font-weight-bold me-2">HRIS BCK</span>
       </router-link>
     </div>
     <hr class="mt-0 horizontal dark" />

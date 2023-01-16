@@ -7,6 +7,7 @@ import RTL from "../views/Rtl.vue";
 import Profile from "../views/Profile.vue";
 import Signup from "../views/Signup.vue";
 import Signin from "../views/Signin.vue";
+import Login from "../views/Login.vue";
 
 // ADMIN
 import DataKaryawan from "../views/admin/DataKaryawan.vue";
@@ -46,6 +47,11 @@ const routes = [
     name: 'DetailSlip',
     component: DetailSlip
   },
+  {
+    path: "/login",
+    name: "Login",
+    component: Login,
+  },
 
   {
     path: "/dashboard-default",
@@ -82,11 +88,7 @@ const routes = [
     name: "Signin",
     component: Signin,
   },
-  {
-    path: "/signup",
-    name: "Signup",
-    component: Signup,
-  },
+  
   
 ];
 
@@ -95,5 +97,39 @@ const router = createRouter({
   routes,
   linkActiveClass: "active",
 });
+
+router.beforeEach((to, from, next) => {
+  const publicPages = ['Login'];
+  const authRequired = !publicPages.includes(to.name);
+  const authenticated = JSON.parse(localStorage.getItem('authenticated'));  
+
+  if (authRequired && !authenticated) {
+      alert('Session Kamu Habis Ayo Login Lagi !!!')
+      return next({
+          name: 'Login',
+          query: {redirect: to.fullPath}
+      });
+  }
+
+  if (authenticated) {
+      const auth = JSON.parse(authenticated);
+      if (to.name == 'Login') {
+          return next({
+              name: '/'
+          });
+      }
+      if (to.name != 'Relogin') {
+          if (auth.expired) {
+            alert('Session Kamu Habis Ayo Login Lagi !!!')
+            localStorage.removeItem('token');
+            localStorage.setItem('authenticated', false)  
+            return next({
+                name: 'Login'
+            });
+          }
+      }
+  }
+  next();
+})
 
 export default router;

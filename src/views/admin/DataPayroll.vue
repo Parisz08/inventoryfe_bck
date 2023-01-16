@@ -29,9 +29,9 @@
                   color="success"
                   size="sm"
                   @click="sendSlip()"
-                  :disabled="onLoading == true || search.periode_start == ''"
+                  :disabled="onLoadingSendSlip == true || search.periode_start == ''"
                 >
-                  <span v-if="onLoading"><i class="fa fa-spinner fa-spin"></i> Please Wait...</span>
+                  <span v-if="onLoadingSendSlip"><i class="fa fa-spinner fa-spin"></i> Please Wait...</span>
                   <span v-else>
                       <span><i class="fa fa-paper-plane fa-sm" style="margin-right: 5px;" aria-hidden="true"></i> Send Slip</span>
                   </span>
@@ -128,7 +128,7 @@
                       </td>
                       <!-- U. MAKAN -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp((row.makan * row.total_kerja_count)) }}</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp((row.makan)) }}</span>
                       </td>
                       <!-- TOTAL ALPA -->
                       <td class="align-middle text-center">
@@ -153,7 +153,7 @@
                       <!-- TOTAL GAJI -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold" v-if="row.rel_payroll != null">
-                          {{ convertRp(Math.round(Number(((row.harian == 0) ? ((row.bulanan / row.rel_payroll.periode_total_hk) * row.total_kerja_count) : (row.harian * row.total_kerja_count) ) + row.tj_jabatan_skill + row.transport + (row.makan * row.total_kerja_count) + row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619))) ) }}
+                          {{ convertRp(Math.round(Number(((row.harian == 0) ? ((row.bulanan / row.rel_payroll.periode_total_hk) * row.total_kerja_count) : (row.harian * row.total_kerja_count) ) + row.tj_jabatan_skill + row.transport + (row.makan) + row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619))) ) }}
                         </span>
                       </td>
                       <!-- PIUTANG -->
@@ -178,37 +178,37 @@
                       </td>
                       <!-- JHT -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.upah_bpjs * Number(row.jht)) }}</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.jht) }}</span>
                       </td>
                       <!-- JKM -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.upah_bpjs * Number(row.jkm)) }}</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.jkm) }}</span>
                       </td>
                       <!-- JKK -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.upah_bpjs * Number(row.jkk)) }}</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.jkk) }}</span>
                       </td>
                       <!-- JP -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.upah_bpjs * Number(row.jp)) }}</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.jp) }}</span>
                       </td>
                       <!-- JKS -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Number(row.jks) * Number(4309772)) }}</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.jks) }}</span>
                       </td>
                       <!-- TOTAL POTONGAN BPJS -->
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Number(row.upah_bpjs * Number(row.jht) +  row.upah_bpjs * Number(row.jkm) + row.upah_bpjs * Number(row.jkk) + row.upah_bpjs * Number(row.jp) + Number(row.jks) * Number(4309772))) }}</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Number(row.jht + row.jkm + row.jkk + row.jp + row.jks)) }}</span>
                       </td>
                       <!-- TOTAL POTONGAN -->
                       <td class="align-middle text-center">
                         <span v-if="row.rel_payroll != null">
-                          <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Number(row.rel_payroll.piutang + row.rel_payroll.pinjaman + row.upah_bpjs * Number(row.jht) +  row.upah_bpjs * Number(row.jkm) + row.upah_bpjs * Number(row.jkk) + row.upah_bpjs * Number(row.jp) + Number(row.jks) * Number(4309772))) }}</span>
+                          <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Number(row.rel_payroll.piutang + row.rel_payroll.pinjaman + row.jht + row.jkm + row.jkk + row.jp + row.jks)) }}</span>
                         </span>
                       </td>
                       <!-- GAJI DITERIMA -->
                       <td class="align-middle text-center" v-if="row.rel_payroll != null">
-                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Math.round(Number(((row.harian == 0) ? ((row.bulanan / row.rel_payroll.periode_total_hk) * row.total_kerja_count) : (row.harian * row.total_kerja_count) ) + row.tj_jabatan_skill + row.transport + (row.makan * row.total_kerja_count) + row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619)) - ( Number(row.rel_payroll.piutang + row.rel_payroll.pinjaman) + Number(row.upah_bpjs * Number(row.jht) +  row.upah_bpjs * Number(row.jkm) + row.upah_bpjs * Number(row.jkk) + row.upah_bpjs * Number(row.jp) + Number(row.jks) * Number(4309772))) )) }}</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ convertRp(Math.round(Number(((row.harian == 0) ? ((row.bulanan / row.rel_payroll.periode_total_hk) * row.total_kerja_count) : (row.harian * row.total_kerja_count) ) + row.tj_jabatan_skill + row.transport + (row.makan) + row.total_ot_count * ((row.unit == 'Head Quarter') ? 250000 : 22619)) - ( Number(row.rel_payroll.piutang + row.rel_payroll.pinjaman) + Number(row.jht + row.jkm + row.jkk + row.jp + row.jks )) )) }}</span>
                       </td>
                       <!-- STATUS TF -->
                       <td class="align-middle text-center">
@@ -294,7 +294,12 @@
           <argon-button  variant="gradient" color="secondary" size="sm" width="1" @click="formFilter.show = false">Close</argon-button>
         </div>
         <div class="col-1">
-          <argon-button variant="gradient" color="success" size="sm" width="1" @click="get(), formFilter.show = false">Filter</argon-button>
+          <argon-button variant="gradient" color="success" size="sm" width="1" @click="get()" :disabled="onLoading == true">
+            <span v-if="onLoading"><i class="fa fa-spinner fa-spin"></i> Please Wait...</span>
+            <span v-else>
+                <span> Filter</span>
+            </span>
+          </argon-button>
         </div>
       </div>
       <!-- end footer -->
@@ -328,6 +333,7 @@ export default {
         show: false
       },
       onLoading: false,
+      onLoadingSendSlip: false,
       // karyawan: {},
       // totalSakitAll: '',
       // totalIjinAll: '',
@@ -350,13 +356,18 @@ export default {
   },
   methods: {
     get(){
-      let context = this;               
+      let context = this; 
+      this.onLoading = true;
+                    
       Api(context, dataPayroll.index({nama: context.search.nama, periode_start: context.search.periode_start, periode_end: context.search.periode_end,})).onSuccess(function(response) {    
           context.absenKaryawan.data = response.data.data.payroll;
       }).onError(function(error) {                    
           if (error.response.status == 404) {
               context.table.data = [];
           }
+      }).onFinish(function() { 
+         context.onLoading = false;
+         context.formFilter.show  = false;
       })
       .call()
     },
@@ -388,7 +399,7 @@ export default {
     },
     sendSlip(){
       let context    = this;       
-      this.onLoading = true;
+      this.onLoadingSendSlip = true;
 
       Api(context, dataPayroll.sendSlip({periode_start: context.search.periode_start, periode_end: context.search.periode_end})).onSuccess(function(response) {    
           // context.absenKaryawan.data = response.data;
@@ -397,7 +408,7 @@ export default {
               // context.table.data = [];
           }
       }).onFinish(function() {  
-          context.onLoading = false;
+          context.onLoadingSendSlip = false;
       })
       .call()
     },
