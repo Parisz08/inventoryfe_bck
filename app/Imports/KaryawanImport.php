@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\WithValidation;
-// use App\Http\Traits\LoggedUser;
+use App\Http\Traits\LoggedUser;
 
 class KaryawanImport implements ToCollection, WithStartRow, WithValidation
 {
@@ -30,11 +30,11 @@ class KaryawanImport implements ToCollection, WithStartRow, WithValidation
             $karyawanId = 'BCK-'.$seq;
 
             Karyawan::create([
-               'id_karyawan'      => $karyawanId,
+               'id_karyawan'      => $row[1],
                'nama'             => $row[2],
                'jabatan'          => $row[3],
                'unit'             => $row[4],
-               'harian'           => $row[5],
+               'harian'           => ($row[5] == null) ? 0 : $row[5],
                'bulanan'          => $row[6],
                'tj_jabatan_skill' => $row[7],
                'transport'        => $row[8],
@@ -54,7 +54,7 @@ class KaryawanImport implements ToCollection, WithStartRow, WithValidation
                'no_hp'            => $row[22],
                'email'            => $row[23],
                'status'           => 'Aktif',
-               // 'created_by'     => LoggedUser::get()['user']->full_name,
+               'created_by'       => LoggedUser::get()['user']->full_name,
             ]);
         }
     }
@@ -73,9 +73,9 @@ class KaryawanImport implements ToCollection, WithStartRow, WithValidation
             '*.10' => ['required'],
             '*.11' => ['required'],
             '*.12' => ['required'],
-            '*.21' => ['required'],
-            '*.22' => ['required'],
-            '*.23' => ['required'],
+            // '*.21' => ['required'],
+            // '*.22' => ['required'],
+            // '*.23' => ['required'],
             // '*.5' => ['exists:client_master,client_name'],
             // '*.6' => ['unique:mother_coil,coil_no'],
         ];
@@ -90,9 +90,9 @@ class KaryawanImport implements ToCollection, WithStartRow, WithValidation
             '10.unique'  => 'Nama Bank Is Required',
             '11.unique'  => 'No Rekening Is Required',
             '12.unique'  => 'An Rekening Is Required',
-            '21.unique'  => 'NIK Is Required',
-            '22.unique'  => 'NO HP Is Required',
-            '23.unique'  => 'Email Is Required',
+            // '21.unique'  => 'NIK Is Required',
+            // '22.unique'  => 'NO HP Is Required',
+            // '23.unique'  => 'Email Is Required',
         ];
     }
 }

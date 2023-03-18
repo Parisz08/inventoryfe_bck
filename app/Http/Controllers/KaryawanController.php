@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Library\Responses;
 use Illuminate\Support\Facades\DB;
 use App\Karyawan;
+use App\User;
 use validator;
 use App\Http\Traits\LoggedUser;
 
@@ -13,27 +14,37 @@ class KaryawanController extends Controller
 {
     public function index(Request $request)
     {
-        $per_page = 100;
 
-        if(!empty($request->input('search'))){
-            $data = DB::table('karyawan')
-                    ->where('nama', 'LIKE', "%".$request->search."%")
-                    ->orWhere('unit', 'LIKE', "%".$request->search."%")
-                    ->orderBy('id_karyawan', 'ASC')
-                    ->paginate($per_page);
-
-            $links = $data->appends(['search' => $request->search])->links();
-        } else {
-            $data = DB::table('karyawan')
-                    ->orderBy('id_karyawan', 'ASC')
-                    ->paginate($per_page);
-
-            $links = $data->links();
+        $master = DB::table('karyawan');
+        if(!empty($request->input('id_karyawan'))){
+            $result = $master->where('id_karyawan', 'LIKE', "%".$request->id_karyawan."%");
         }
+        if(!empty($request->input('nama'))){
+            $result = $master->where('nama', 'LIKE', "%".$request->nama."%");
+        }
+        if(!empty($request->input('nik'))){
+            $result = $master->where('nik', 'LIKE', "%".$request->nik."%");
+        }
+        if(!empty($request->input('jabatan'))){
+            $result = $master->where('jabatan', 'LIKE', "%".$request->jabatan."%");
+        }
+        if(!empty($request->input('unit'))){
+            $result = $master->where('unit', 'LIKE', "%".$request->unit."%");
+        }
+        if(!empty($request->input('status'))){
+            $result = $master->where('status', 'LIKE', "%".$request->status."%");
+        }
+        
+        if (empty($request->input('id_karyawan')) && empty($request->input('nama')) && empty($request->input('nik')) && empty($request->input('jabatan'))  && empty($request->input('unit'))  && empty($request->input('status'))) {
+            $result = $master->orderBy('id_karyawan', 'ASC')->get();
+        }else{
+            $result = $master->orderBy('id_karyawan', 'ASC')->get();
+        }
+
+        $data  = $result;
 
         $dataResult = [
             'data'  => $data,
-            'links' => $links,
         ];
 
         if (count($data) == 0) {
@@ -56,27 +67,6 @@ class KaryawanController extends Controller
 
     public function store(Request $request)
     {     
-        // $validator = validator::make($request->all(), [
-        //     'full_name'   => 'required',
-        //     'username'    => 'required|unique:users,username',
-        //     'password'    => 'required',
-        //     'role'        => 'required',
-        // ]);
-
-        // if($validator->fails()){
-        //     return Responses::sendError($validator->errors(), 'Validation Error');
-        // }
-
-        // if ($request->hasFile('image')) {
-        //     $attach    = $request->image;
-        //     $original  = $attach->getClientOriginalName();
-        //     $file      = pathinfo($original, PATHINFO_FILENAME);
-        //     $extension = pathinfo($original, PATHINFO_EXTENSION);
-        //     $filename  = $file.'_'.\Carbon\Carbon::now()->format('ymd_his').'.'.$extension;
-
-        //     $attach->move(storage_path('image_user'), $filename );
-        // }
-
         // SEQUENCE
         $lastSeq = DB::table('karyawan')->pluck('id_karyawan')->last();
         if (empty($lastSeq)) {
@@ -94,7 +84,6 @@ class KaryawanController extends Controller
         $data->jabatan          = $request->input('jabatan');
         $data->unit             = $request->input('unit');
         $data->status           = ($request->input('status') == '') ? null : $request->input('status');
-        $data->gaji_pokok       = $request->input('gaji_pokok');
         $data->harian           = $request->input('harian');
         $data->bulanan          = $request->input('bulanan');
         $data->tj_jabatan_skill = $request->input('tj_jabatan_skill');
@@ -105,8 +94,8 @@ class KaryawanController extends Controller
         $data->an_rek           = $request->input('an_rek');
         $data->no_bpjs_tk       = $request->input('no_bpjs_tk');
         $data->no_bpjs_kes      = $request->input('no_bpjs_kes');
-        $data->total_cuti       = $request->input('total_cuti');
         $data->id_karyawan      = $karyawanId;
+        $data->created_by       = LoggedUser::get()['user']->full_name;
         $data->save();
 
         // return Responses::sendResponse($data, 'Account Created Successfully');
@@ -114,26 +103,6 @@ class KaryawanController extends Controller
 
     public function update(Request $request, $id)
     {
-        // $validator = validator::make($request->all(), [
-        //     'full_name' => 'required',
-        //     'username'  => 'required|unique:users,username,'.$id,
-        //     'role'      => 'required',
-        // ]);
-
-        // if($validator->fails()){
-        //     return Responses::sendError($validator->errors(), 'Validation Error');       
-        // }
-
-        // if ($request->hasFile('image')) {
-        //     $attach    = $request->image;
-        //     $original  = $attach->getClientOriginalName();
-        //     $file      = pathinfo($original, PATHINFO_FILENAME);
-        //     $extension = pathinfo($original, PATHINFO_EXTENSION);
-        //     $filename  = $file.'_'.\Carbon\Carbon::now()->format('ymd_his').'.'.$extension;
-            
-        //     $attach->move(storage_path('image_user'), $filename );
-        // }
-
         $data                   = Karyawan::find($id);
         $data->nama             = $request->input('nama');
         $data->jabatan          = $request->input('jabatan');
@@ -162,6 +131,7 @@ class KaryawanController extends Controller
         $data->no_hp      = $request->input('no_hp');
         $data->email      = $request->input('email');
         $data->total_cuti = $request->input('total_cuti');
+        $data->updated_by = LoggedUser::get()['user']->full_name;
         $data->save();
 
         return Responses::sendResponse($data, 'Account Updated Successfully');
@@ -174,11 +144,31 @@ class KaryawanController extends Controller
         return Responses::sendResponse($data, 'Account Deleted Successfully');
     }
 
-    public function create_akun_default()
-    {
-        $user             = new Karyawan;
-        $user->username   = 'admin';
-        $user->password   = password_hash('123456', PASSWORD_BCRYPT);
-        $user->save();
+    public function changePassFoto(Request $request)
+    {     
+        // JIKA ADA FOTO YANG DI RUBAH
+        if ($request->hasFile('foto')) {
+            $attach    = $request->foto;
+            $original  = $attach->getClientOriginalName();
+            $file      = pathinfo($original, PATHINFO_FILENAME);
+            $extension = pathinfo($original, PATHINFO_EXTENSION);
+            $filename  = $file.'.'.$extension;
+
+            $attach->move(storage_path('foto_karyawan'), $filename );
+
+            $data                = Karyawan::find($request->id_karyawan);
+            $data->foto_karyawan = $filename;
+            $data->updated_by    = LoggedUser::get()['user']->full_name;
+            $data->save();
+        }
+
+        // JIKA PASSWORD DI RUBAH
+        if (!empty($request->password)) {
+            DB::table('users')->where('employee_id', $request->employee_id)->update([
+                'password' => password_hash($request->password, PASSWORD_BCRYPT),
+            ]);
+        }
+
+        return Responses::sendResponse(null, 'Change Data Successfully');
     }
 }

@@ -132,6 +132,7 @@ class AbsensiController extends Controller
                         $data->type_hk = 1;
                         array_push($periodeTotalHK, 1);
                     }
+                    $data->created_by = LoggedUser::get()['user']->full_name;
                     $data->save(); 
                 }
             }
@@ -145,6 +146,7 @@ class AbsensiController extends Controller
                 $payroll->periode_end      = $peroideEnd;
                 $payroll->periode_total_hk = array_sum($periodeTotalHK);
                 $payroll->send_slip        = 'true';
+                $payroll->created_by       = LoggedUser::get()['user']->full_name;
                 $payroll->save();
             }
         }
@@ -171,22 +173,48 @@ class AbsensiController extends Controller
         return Responses::sendResponse(null, 'Absen Created Successfully');
     }
 
+    public function setLibur(Request $request)
+    {
+        $peroideStart = $request->input('periode_start');
+        $peroideEnd   = $request->input('periode_end');
+
+        // update peroide total kerja
+        $ambilTotalHK =  DB::table('payroll')->where('periode_start', $peroideStart)->where('periode_end', $peroideEnd)->pluck('periode_total_hk')->first();
+        DB::table('payroll')->where('periode_start', $peroideStart)->where('periode_end', $peroideEnd)->update([
+            'periode_total_hk' => ($ambilTotalHK - 1),
+            'updated_by'       => LoggedUser::get()['user']->full_name
+        ]);
+
+        // update tanggal absen
+        $data = DB::table('absen')->whereDate('date', $request->tanggal)->update([
+                    'type_hk'    => null,
+                    'status'     => 'Holiday',
+                    'updated_by' => LoggedUser::get()['user']->full_name
+                ]);
+
+        return Responses::sendResponse(NULL, 'Absen Updated Successfully');
+    }
+
     public function update(Request $request)
     {
         $unitUser = $request->unit_user;
         $typeHari = $request->type_hari;
-        // return $unitUser;
+        
+        $getStatus = DB::table('absen')->where('id', $request->id)->pluck('status')->first();
         $data = Absen::find($request->id);
         if ($request->type == 'HK') {
             $data->type_hk = $request->value;
         }else{
             $jam = $request->value;
             if ($jam != 0) {
-                $data->type_ot = ($unitUser === 'Head Quarter') ? ($jam/8) : (($typeHari == 'Sab' || $typeHari == 'Min') ? ($jam * 2) : (1 * 1.5 + $jam * 2));
+                $jam1 = 1;
+                $jam2 = ($jam - 1);
+                $data->type_ot = ($unitUser === 'Head Quarter') ? ($jam/8) : (($typeHari == 'Sab' || $typeHari == 'Min' || $getStatus == 'Holiday') ? ($jam * 2) : ($jam1 * 1.5 + $jam2 * 2));
             }else{
                 $data->type_ot = 0;
             }
         }
+        $data->updated_by = LoggedUser::get()['user']->full_name;
         $data->save();
 
         return Responses::sendResponse($data, 'Absen Updated Successfully');

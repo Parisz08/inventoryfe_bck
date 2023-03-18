@@ -125,6 +125,7 @@ class PayrollController extends Controller
         }else if($request->send_slip == 0 || $request->send_slip == 'false') {
             $data->send_slip  = 'false';
         }
+        $data->updated_by = LoggedUser::get()['user']->full_name;
         $data->save();
 
         return Responses::sendResponse($data, 'Absen Updated Successfully');
@@ -159,10 +160,12 @@ class PayrollController extends Controller
                         ->where('payroll.send_slip', 'true')
                         ->where('payroll.periode_start', $peroideStart)
                         ->where('payroll.periode_end', $peroideEnd)
+                        ->whereNotNull('email')
                         ->orderBy('karyawan.id_karyawan', 'ASC')
                         ->get();
 
         foreach ($noHPKaryawan as $key => $value) {
+            setlocale(LC_ALL, 'IND');
             $idKaryawan   = $value->id_karyawan;
             $email        = $value->email;
             $nama_lengkap = $value->nama;
@@ -204,5 +207,69 @@ class PayrollController extends Controller
         }
 
         return Responses::sendResponse(null, 'Berhasil Mengirim Slip Gaji');
+    }
+
+    public function getBank(Request $request)
+    {
+        $peroideStart = $request->periode_start;
+        $peroideEnd   = $request->periode_end;
+
+        $master =  Karyawan::withCount(['totalKerja' => function($query) use ($peroideStart, $peroideEnd) {
+                         $query->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd);
+                      },
+                      'totalAlpa' => function($query) use ($peroideStart, $peroideEnd) {
+                         $query->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd);
+                      },
+                      'totalSakit' => function($query) use ($peroideStart, $peroideEnd) {
+                         $query->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd);
+                      },
+                      'totalIjin' => function($query) use ($peroideStart, $peroideEnd) {
+                         $query->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd);
+                      },
+                      'totalCuti' => function($query) use ($peroideStart, $peroideEnd) {
+                         $query->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd);
+                      },
+                      'totalOt' => function($query) use ($peroideStart, $peroideEnd) {
+                         $query->select(DB::raw('SUM(type_ot)'))->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd);
+                      }])
+                      ->with(['relPayroll' => function($query) use ($peroideStart, $peroideEnd) {
+                         $query->where('periode_start', '>=', $peroideStart)->where('periode_end', '<=', $peroideEnd);
+                      }]);
+
+                      if($request->nama_bank == 'BANK BSI')
+                      {
+                        $result = $master->where('bank', 'Bank Syariah Indonesia')->orderBy('id_karyawan', 'ASC')->get();
+                      }else if($request->nama_bank == 'BANK MANDIRI')
+                      {
+                        $result = $master->where('bank', 'Bank Mandiri')->orderBy('id_karyawan', 'ASC')->get();
+                      }else
+                      {
+                        $result = $master->whereNotIn('bank', ['Bank Syariah Indonesia','Bank Mandiri'])->orderBy('id_karyawan', 'ASC')->get();
+                      }
+
+                    $payroll   = $result;
+                      
+                    // generate total gaji
+                    $totalG = [];
+                    foreach ($payroll as $i => $row) {
+
+                        $total = ((($row->harian == 0) ? (($row->bulanan / $row->relPayroll['periode_total_hk']) * $row->total_kerja_count) : ($row->harian * $row->total_kerja_count))
+                                    + $row->tj_jabatan_skill + $row->transport + $row->makan + $row->total_ot_count * (($row->unit == 'Head Quarter') ? 250000 : 22619)
+                                    - ( $row->relPayroll['piutang'] + $row->relPayroll['pinjaman'] + $row->jht + $row->jkm + $row->jkk + $row->jp + $row->jks ));
+
+                        array_push($totalG, round($total, 0));
+                    }
+                    $totalGaji = array_sum($totalG);
+
+        $dataResult = [
+            'totalGaji' => $totalGaji,
+            'payroll'   => $payroll,
+        ];
+
+        if (count($payroll) == 0) {
+            return Responses::sendError($dataResult, 'Payroll Is Empty');
+        }
+
+        return Responses::sendResponse($dataResult, 'Payroll Retrieved Successfully');
     }
 }
