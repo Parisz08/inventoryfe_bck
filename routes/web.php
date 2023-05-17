@@ -17,12 +17,13 @@ $router->get('/', function () use ($router) {
 
 
 // ================================= FOR NO LOGIN ==========================================================
+    // TEST
+    $router->get('test', 'TestController@index');
+
     // LOGIN
     $router->post('/auth/login', 'AuthController@login');
     $router->get('/auth/logout', 'AuthController@logout');
     $router->get('create_akun_default', 'AkunController@create_akun_default');
-    // TEST
-    $router->get('/test', 'TestController@index');
 
     // EXPORT EXCEL
     $router->get('export-excel/karyawan', 'ExportExcelController@karyawan');
@@ -39,44 +40,26 @@ $router->group(['middleware' => 'jwt.tymon'], function () use ($router){
     // DASHBOARD
     $router->get('dashboard/index', 'DashboardController@index');
     $router->get('dashboard/show-ehp', 'DashboardController@showEhp');
-    // KARYAWAN
-    $router->get('karyawan/index', 'KaryawanController@index');
-    $router->get('karyawan/show/{id}', 'KaryawanController@show');
-    $router->post('karyawan/create', 'KaryawanController@store');
-    $router->post('karyawan/update/{id}', 'KaryawanController@update');
-    $router->post('karyawan/delete/{id}', 'KaryawanController@destroy');
-    $router->post('karyawan/change-password-foto', 'KaryawanController@changePassFoto');
-    // ABSENSI
-    $router->get('absensi/index', 'AbsensiController@index');
-    $router->get('absensi/show/{id}', 'AbsensiController@show');
-    $router->post('absensi/create', 'AbsensiController@store');
-    $router->post('absensi/set-libur', 'AbsensiController@setLibur');
-    $router->post('absensi/update-absen', 'AbsensiController@update');
-    // PAYROLL
-    $router->get('payroll/index', 'PayrollController@index');
-    $router->get('payroll/show', 'PayrollController@show');
-    $router->post('payroll/update-payroll', 'PayrollController@update');
-    $router->get('payroll/send-slip', 'PayrollController@sendSlip');
-    $router->get('payroll/get-bank', 'PayrollController@getBank');
-    // APPROVAL CUTI
-    $router->get('approval-cuti/index', 'ApprovalCutiController@index');
-    $router->get('approval-cuti/show/{id}', 'ApprovalCutiController@show');
-    $router->post('approval-cuti/create', 'ApprovalCutiController@store');
-    $router->post('approval-cuti/update/{id}', 'ApprovalCutiController@update');
-    $router->post('approval-cuti/delete/{id}', 'ApprovalCutiController@destroy');
-    // APPROVAL LEMBUR
-    $router->get('approval-lembur/search-anggota', 'ApprovalLemburController@searchAnggotaLembur');
-    $router->get('approval-lembur/index', 'ApprovalLemburController@index');
-    $router->get('approval-lembur/show', 'ApprovalLemburController@show');
-    $router->post('approval-lembur/create', 'ApprovalLemburController@store');
-    $router->post('approval-lembur/app-lembur/{code_spl}', 'ApprovalLemburController@appLembur');
-    $router->post('approval-lembur/delete-anggota/{id}', 'ApprovalLemburController@deleteAnggota');
-    // SETTING APPROVAL
-    $router->get('setting-approval/index', 'SettingApprovalController@index');
-    $router->get('setting-approval/show/{id}', 'SettingApprovalController@show');
-    $router->post('setting-approval/create', 'SettingApprovalController@store');
-    $router->post('setting-approval/update/{id}', 'SettingApprovalController@update');
-    $router->post('setting-approval/delete/{id}', 'SettingApprovalController@destroy');
+    // BARANG MASUK
+    $router->get('barang-masuk/index', 'BarangMasukController@index');
+    $router->get('barang-masuk/show/{id}', 'BarangMasukController@show');
+    $router->get('barang-masuk/cek-material', 'BarangMasukController@cekMaterial');
+    $router->post('barang-masuk/create', 'BarangMasukController@store');
+    $router->post('barang-masuk/update/{id}', 'BarangMasukController@update');
+    $router->post('barang-masuk/delete/{id}', 'BarangMasukController@destroy');
+    // BARANG KELUAR
+    $router->get('barang-keluar/index', 'BarangKeluarController@index');
+    $router->get('barang-keluar/search-material', 'BarangKeluarController@searchMaterial');
+    $router->get('barang-keluar/get-material', 'BarangKeluarController@getMaterial');
+    $router->post('barang-keluar/create', 'BarangKeluarController@store');
+    $router->post('barang-keluar/update/{id}', 'BarangKeluarController@update');
+    $router->post('barang-keluar/delete/{id}', 'BarangKeluarController@destroy');
+    // STOCK BARANG
+    $router->get('stock-barang/index', 'StockBarangController@index');
+    $router->get('stock-barang/show/{id}', 'StockBarangController@show');
+    $router->post('stock-barang/create', 'StockBarangController@store');
+    $router->post('stock-barang/update/{id}', 'StockBarangController@update');
+    $router->post('stock-barang/delete/{id}', 'StockBarangController@destroy');
     // AKUN
     $router->get('akun/index', 'AkunController@index');
     $router->get('akun/index-profile', 'AkunController@indexProfile');

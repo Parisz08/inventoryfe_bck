@@ -52,6 +52,13 @@ $app->singleton('filesystem', function ($app) {
     return $app->loadComponent('filesystems', 'Illuminate\Filesystem\FilesystemServiceProvider', 'filesystem');
 });
 
+if (! function_exists('config_path')) {
+    function config_path($path = '')
+    {
+        return app()->basePath() . '/config' . ($path ? '/' . $path : $path);
+    }
+}
+
 /*
 |--------------------------------------------------------------------------
 | Register Middleware
@@ -74,6 +81,7 @@ $app->middleware([
 $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
     'jwt.tymon' => App\Http\Middleware\JwtMiddleware::class,
+    'httploger' => App\Http\Middleware\HttpLogerMiddleware::class,
 ]);
 
 /*
@@ -93,6 +101,7 @@ $app->register(App\Providers\EventServiceProvider::class);
 $app->register(Illuminate\Mail\MailServiceProvider::class);
 $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
 $app->register(Maatwebsite\Excel\ExcelServiceProvider::class);
+$app->register(Spatie\Activitylog\ActivitylogServiceProvider::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -111,6 +120,7 @@ $app->alias('mailer', Illuminate\Mail\Mailer::class);
 $app->alias('mailer', Illuminate\Contracts\Mail\Mailer::class);
 $app->alias('mailer', Illuminate\Contracts\Mail\MailQueue::class);
 $app->alias('Excel', Maatwebsite\Excel\Facades\Excel::class);
+$app->alias('auth', \Illuminate\Auth\AuthManager::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -130,5 +140,6 @@ $app->router->group([
 });
 
 $app->configure('mail');
+$app->configure('activitylog');
 
 return $app;
