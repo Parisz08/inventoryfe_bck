@@ -51,7 +51,6 @@
   </main>
   <app-footer />
 </template>
-
 <script>
 // import Navbar from "@/examples/PageLayout/Navbar.vue";
 import AppFooter from "@/examples/PageLayout/Footer.vue";
@@ -61,6 +60,8 @@ import config from '@/configs/config';
 import axios from 'axios';
 import Api from '@/helpers/api';
 import akun from '@/services/akun.service';
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
 
 export default {
   components: {
@@ -109,11 +110,11 @@ export default {
                 // context.notifyVue('Selamat anda berhasil login '+dataRole.full_name, 'top', 'right', 'info')
                 localStorage.setItem('role', dataRole.role)
                 localStorage.setItem('username', dataRole.full_name)
-                // if (dataRole.role == 'Admin') {
+                if (dataRole.role == 'Admin') {
                     context.$router.push('dashboard-default')
-                // }else{
-                //     context.$router.push('/profile')
-                // }
+                }else{
+                    context.$router.push('/detail-profile/'+dataRole.employee_id)
+                }
             }).onError(function(error) {  
             })
             .call() 
@@ -121,10 +122,21 @@ export default {
             context.onLoading = true;
         })
         .catch(err => {
-         // this.notifyVue('Username atau Password Salah', 'top', 'right', 'danger')
+         this.notify('Username atau Password Salah', 'error')
         })
       } else {
-        // this.notifyVue('Error Username Password Required', 'top', 'right', 'danger')
+        this.notify('Error Username Password Required', 'error')
+      }
+    },
+    notify(message, type) {
+      if (type == 'success') {
+        toast.success(message, {
+          autoClose: 2000,
+        }); // ToastOptions
+      }else{
+        toast.error(message, {
+          autoClose: 2000,
+        }); // ToastOptions
       }
     },
   }

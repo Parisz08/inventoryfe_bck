@@ -5,36 +5,36 @@
         <div class="row">
           <div class="col-lg-3 col-md-6 col-12">
             <card
-              title="Total Employees"
+              title="Total Item"
               :value="totalKaryawan"
-              iconClass="ni ni-single-02"
+              iconClass="ni ni-collection"
               iconBackground="bg-gradient-primary"
               directionReverse
             ></card>
           </div>
           <div class="col-lg-3 col-md-6 col-12">
             <card
-              title="This Month's Salary"
+              title="Total Barang"
               :value="convertRp(totalGajiBulanIni)"
-              iconClass="fa fa-usd"
+              iconClass="ni ni-folder-17"
               iconBackground="bg-gradient-danger"
               directionReverse
             ></card>
           </div>
           <div class="col-lg-3 col-md-6 col-12">
             <card
-              title="Last Month's Salary"
+              title="Total Barang Masuk"
               :value="convertRp(totalGajiBulanLalu)"
-              iconClass="ni ni-paper-diploma"
+              iconClass="ni ni-cloud-download-95"
               iconBackground="bg-gradient-success"
               directionReverse
             ></card>
           </div>
           <div class="col-lg-3 col-md-6 col-12">
             <card
-              title="Sales"
-              value="$103,430"
-              iconClass="ni ni-cart"
+              title="Total Barang Keluar"
+              :value="totalUsers"
+              iconClass="ni ni-cloud-upload-96"
               iconBackground="bg-gradient-warning"
               directionReverse
             ></card>
@@ -54,9 +54,24 @@
         <div class="row mt-4">
           <div class="col-lg-12 mb-lg-0 mb-4">
             <div class="card">
-              <div class="p-3 pb-0 card-header">
-                <div class="d-flex justify-content-between">
-                  <h6 class="mb-2">Employee Hour Performance</h6>
+              <div class="row mb-4">
+                <div class="col-4">
+                  <div class="card-header pb-0">
+                    <h6>Employee Hour Performance</h6>
+                  </div>
+                </div>
+                <div class="col-4">
+                </div>
+                <div class="col-4 float-right">
+                  <argon-button
+                    style="margin-right: 10px; margin-left: 60px;"
+                    class="mt-4"
+                    variant="gradient"
+                    color="secondary"
+                    size="sm"
+                    @click="filter()"
+                  ><i class="fa fa-filter fa-sm" aria-hidden="true"></i> Filter</argon-button>
+                  <a class="btn btn-sm btn-warning" style="margin-top: 40px;" :href="apiUrl+'print-pdf/ehp?periode_start='+search.periode_start+'&periode_end='+search.periode_end+'&nama='+search.nama+'&jabatan='+search.jabatan+'&unit='+search.unit+''" target="_BLANK"><i class="fa fa-print fa-sm"></i> Print</a>
                 </div>
               </div>
               <div class="table-responsive">
@@ -121,23 +136,58 @@
             <categories-card />
           </div> -->
         </div>
+
+        <!-- =======  MODAL FILTER ======= -->
+        <div class="container">
+          <vue-final-modal v-model="formFilter.show" classes="modal-container" content-class="modal-content" :z-index="10000">
+            <!-- header -->
+            <div class="row">
+              <div class="col-11 float-left">
+                <span class="modal__title">{{formFilter.title}}</span>
+              </div>
+              <div class="col-1 float-right">
+                <i style="cursor: pointer;" class="fa fa-times" aria-hidden="true" @click="formFilter.show = false"></i>
+              </div>
+            </div><hr>
+            <!-- end header -->
+            <div class="modal__content container">
+              <label for="example-text-input" class="form-control-label mt-3">Periode Start</label>
+              <input type="date" class="form-control" placeholder="Periode Start" v-model="search.periode_start">
+              <label for="example-text-input" class="form-control-label mt-3">Periode End</label>
+              <input type="date" class="form-control" placeholder="Periode End" v-model="search.periode_end">
+              <label for="example-text-input" class="form-control-label mt-3">Nama</label>
+              <input type="text" class="form-control" placeholder="Nama" v-model="search.nama" required>
+              <label for="example-text-input" class="form-control-label mt-3">Jabatan</label>
+              <input type="text" class="form-control" placeholder="Jabatan" v-model="search.jabatan" required>
+              <label for="example-text-input" class="form-control-label mt-3">Unit</label>
+              <input type="text" class="form-control" placeholder="Unit" v-model="search.unit" required>
+            </div>
+            <!-- footer -->
+            <div class="row float-right mt-3">
+              <div class="col-6"> 
+              </div>
+              <div class="col-2" style="margin-right: 20px;">
+                <argon-button  variant="gradient" color="secondary" size="sm" width="1" @click="formFilter.show = true">Close</argon-button>
+              </div>
+              <div class="col-1">
+                <argon-button variant="gradient" color="success" size="sm" width="1" @click="getEhp()">Filter</argon-button>
+              </div>
+            </div>
+            <!-- end footer -->
+          </vue-final-modal>
+         </div>
+
       </div>
     </div>
   </div>
 </template>
 <script>
 import Card from "@/examples/Cards/Card.vue";
-// import GradientLineChart from "@/examples/Charts/GradientLineChart.vue";
-// import Carousel from "./components/Carousel.vue";
-// import CategoriesCard from "./components/CategoriesCard.vue";
+import { VueFinalModal } from 'vue-final-modal'
+import ArgonButton from "@/components/ArgonButton.vue";
 import Api from '@/helpers/api';
 import config from '@/configs/config';
 import dashboard from '@/services/dashboard.service';
-
-import US from "@/assets/img/icons/flags/US.png";
-import DE from "@/assets/img/icons/flags/DE.png";
-import GB from "@/assets/img/icons/flags/GB.png";
-import BR from "@/assets/img/icons/flags/BR.png";
 
 export default {
   name: "dashboard-default",
@@ -149,16 +199,30 @@ export default {
       totalKaryawan: '',
       totalGajiBulanIni: '',
       totalGajiBulanLalu: '',
+      totalUsers: '',
+      formFilter: {
+        add: true,
+        title: "Filter",
+        show: false
+      },
+      search: {
+        periode_start: '',
+        periode_end: '',
+        nama: '',
+        jabatan: '',
+        unit: '',
+      },
+      apiUrl :config.apiUrl,
     };
   },
   components: {
     Card,
-    // GradientLineChart,
-    // Carousel,
-    // CategoriesCard,
+    ArgonButton,
+    VueFinalModal,
   },
   mounted(){
     this.get();
+    this.getEhp();
   },
   methods: {
     get(param){
@@ -168,13 +232,26 @@ export default {
           context.totalKaryawan      = response.data.data.totalKaryawan;
           context.totalGajiBulanIni  = response.data.data.totalGajiBulanIni;
           context.totalGajiBulanLalu = response.data.data.totalGajiBulanLalu;
-          console.log(response.data.data.totalGajiBulanIni)
+          context.totalUsers         = response.data.data.totalUsers;
       }).onError(function(error) {                    
           if (error.response.status == 404) {
               context.table.data = [];
           }
       }).onFinish(function() { 
          // context.formFilter.show  = false;
+      })
+      .call()
+    },
+    getEhp(param){
+      let context = this;               
+      Api(context, dashboard.showEhp({ periode_start: context.search.periode_start, periode_end: context.search.periode_end, nama: context.search.nama, jabatan: context.search.jabatan, unit: context.search.unit})).onSuccess(function(response) {    
+          context.table.data = response.data.data.EHP;
+      }).onError(function(error) {                    
+          if (error.response.status == 404) {
+              context.table.data = [];
+          }
+      }).onFinish(function() { 
+         context.formFilter.show  = false;
       })
       .call()
     },
@@ -194,6 +271,54 @@ export default {
         }
       }
     },
+    filter() {
+      this.formFilter.add   = true;
+      this.formFilter.show  = true;
+      this.formFilter.title = "Filter";
+      this.onLoading = false;
+    },
   }
 };
 </script>
+<style scoped>
+::v-deep .modal-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+
+}
+::v-deep .modal-content {
+  display: flex;
+  flex-direction: column;
+  margin: 0 1rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.25rem;
+  background: #fff;
+  width: 500px;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+.modal__title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+</style>
+
+<style scoped>
+.dark-mode div::v-deep .modal-content {
+  border-color: #2d3748;
+  background-color: #1a202c;
+}
+.scroll { 
+  overflow: auto; 
+  height: 500px; 
+}
+.scroll thead th { 
+  position: sticky; 
+  top: 0; 
+  z-index: 100; 
+  background-color: #F0F8FF;
+}
+</style>

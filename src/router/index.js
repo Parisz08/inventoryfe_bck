@@ -10,11 +10,14 @@ import Signin from "../views/Signin.vue";
 import Login from "../views/Login.vue";
 
 // ADMIN
-import DataKaryawan from "../views/admin/DataKaryawan.vue";
-import DetailProfile from "../views/admin/DetailProfile.vue";
-import DataAbsensi from "../views/admin/DataAbsensi.vue";
-import DataPayroll from "../views/admin/DataPayroll.vue";
-import DetailSlip from "../views/admin/DetailSlip.vue";
+import BarangMasuk from "../views/admin/BarangMasuk.vue";
+import BarangKeluar from "../views/admin/BarangKeluar.vue";
+import StockBarang from "../views/admin/StockBarang.vue";
+
+
+// import DetailProfile from "../views/admin/DetailProfile.vue";
+// import DetailSlip from "../views/admin/DetailSlip.vue";
+import Account from "../views/admin/Account.vue";
 
 const routes = [
   {
@@ -23,34 +26,41 @@ const routes = [
     redirect: "/dashboard-default",
   },
   {
-    path: "/data-karyawan",
-    name: "DataKaryawan",
-    component: DataKaryawan,
+    path: "/barang-masuk",
+    name: "BarangMasuk",
+    component: BarangMasuk,
   },
   {
-    path: '/detail-profile/:id_karyawan',
-    name: 'DetailProfile',
-    component: DetailProfile
+    path: "/barang-keluar",
+    name: "BarangKeluar",
+    component: BarangKeluar,
   },
   {
-    path: "/data-absensi",
-    name: "DataAbsensi",
-    component: DataAbsensi,
+    path: "/stock-barang",
+    name: "StockBarang",
+    component: StockBarang,
   },
-  {
-    path: "/data-payroll",
-    name: "DataPayroll",
-    component: DataPayroll,
-  },
-  {
-    path: '/detail-slip/:id_karyawan/:periode_start/:periode_end',
-    name: 'DetailSlip',
-    component: DetailSlip
-  },
+
+
+  // {
+  //   path: '/detail-profile/:id_karyawan',
+  //   name: 'DetailProfile',
+  //   component: DetailProfile
+  // },
+  // {
+  //   path: '/detail-slip/:id_karyawan/:periode_start/:periode_end',
+  //   name: 'DetailSlip',
+  //   component: DetailSlip
+  // },
   {
     path: "/login",
     name: "Login",
     component: Login,
+  },
+  {
+    path: "/account",
+    name: "Account",
+    component: Account,
   },
 
   {
@@ -99,7 +109,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const publicPages = ['Login'];
+  const publicPages = ['Login','Signin'];
   const authRequired = !publicPages.includes(to.name);
   const authenticated = JSON.parse(localStorage.getItem('authenticated'));  
 

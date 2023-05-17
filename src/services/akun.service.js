@@ -28,4 +28,11 @@ export default {
     delete(id) {
         return Service().post('akun/delete/'+id);
     },
+    import(params) {
+        return Service().post('import/import-data-users', params, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+        });
+    },
 }

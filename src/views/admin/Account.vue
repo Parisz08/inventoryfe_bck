@@ -9,7 +9,7 @@
             <div class="row">
               <div class="col-4">
                 <div class="card-header pb-0">
-                  <h6>Data Karyawan</h6>
+                  <h6>Account</h6>
                 </div>
               </div>
               <div class="col-4">
@@ -38,70 +38,31 @@
                 <table class="table align-items-center mb-0">
                   <thead>
                     <tr>
-                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder ">Nama</th>
-                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">Unit</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Status</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">NIK</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">No HP</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Email</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">No Rek</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">A/N REk</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Bank</th>
-                      <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">NO BPJS TK</th> -->
-                      <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">NO BPJS KES</th> -->
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Karyawan ID</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Full Name</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Username</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Status</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Role</th>
                       <th class="text-secondary"></th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-for="(row, i) in table.data" :key="i">
-                      <td>
-                        <router-link :to="/detail-profile/+row.id_karyawan">
-                          <div class="d-flex px-2 py-1">
-                            <div>
-                              <img
-                                src="../../assets/img/avatar_karyawan.png"
-                                class="avatar avatar-sm me-3"
-                                alt="user1"
-                              />
-                            </div>
-                            <div class="d-flex flex-column justify-content-center">
-                              <h6 class="mb-0 text-sm">{{ row.nama }}</h6>
-                              <p class="text-xs text-secondary mb-0">{{ row.jabatan}}</p>
-                            </div>
-                          </div>
-                        </router-link>
-                      </td>
-                      <td>
-                        <p class="text-xs font-weight-bold mb-0">{{ row.unit }}</p>
-                        <p class="text-xs text-secondary mb-0">{{ row.id_karyawan }}</p>
+                      <td class="align-middle text-center text-sm">
+                        <span class="text-secondary text-xs font-weight-bold">{{ row.employee_id }}</span>
                       </td>
                       <td class="align-middle text-center text-sm">
-                        <span class="badge badge-sm bg-gradient-success">{{ row.status }}</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ row.full_name }}</span>
                       </td>
-                      <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ row.nik}}</span>
+                      <td class="align-middle text-center text-sm">
+                        <span class="text-secondary text-xs font-weight-bold">{{ row.username }}</span>
                       </td>
-                      <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ row.no_hp}}</span>
+                      <td class="align-middle text-center text-sm">
+                        <span class="text-secondary text-xs font-weight-bold">{{ row.status }}</span>
                       </td>
-                      <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ row.email}}</span>
+                      <td class="align-middle text-center text-sm">
+                        <span class="text-secondary text-xs font-weight-bold">{{ row.role }}</span>
                       </td>
-                      <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ row.no_rek }}</span>
-                      </td>
-                      <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ row.an_rek }}</span>
-                      </td>
-                      <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ row.bank }}</span>
-                      </td>
-                      <!-- <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">096747565</span>
-                      </td>
-                      <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">KAS-K65758</span>
-                      </td> -->
                       <td>
                         <!-- <i class="fas fa-edit fa-sm" aria-hidden="true" style="cursor: pointer; margin-right: 20px;" @click="edit(row.id)" title="Edit"></i> -->
                         <i class="fa fa-trash-o fa-sm" aria-hidden="true" title="Hapus" style="cursor: pointer; margin-right: 20px;" @click="remove(row.id)"></i>
@@ -141,42 +102,20 @@
       </div><hr>
       <!-- end header -->
       <div class="modal__content container">
-        <!-- <label for="example-text-input" class="form-control-label mt-3">ID Karyawan <span style="color: red;">*</span></label>
-        <input type="text" class="form-control" placeholder="ID Karyawan" v-model="karyawan.id_karyawan"> -->
-        <label for="example-text-input" class="form-control-label mt-3">Nama <span style="color: red;">*</span></label>
-        <input type="text" class="form-control" placeholder="Nama" v-model="karyawan.nama" required>
-        <label for="example-text-input" class="form-control-label mt-3">NIK</label>
-        <input type="text" class="form-control" placeholder="NIK" v-model="karyawan.nik">
-        <label for="example-text-input" class="form-control-label mt-3">Jabatan <span style="color: red;">*</span></label>
-        <input type="text" class="form-control" placeholder="Jabatan" v-model="karyawan.jabatan" required>
-        <label for="example-text-input" class="form-control-label mt-3">Unit <span style="color: red;">*</span></label>
-        <input type="text" class="form-control" placeholder="Unit" v-model="karyawan.unit" required>
-        <label for="example-text-input" class="form-control-label mt-3">Status <span style="color: red;">*</span></label>
-        <input type="text" class="form-control" placeholder="Status" v-model="karyawan.status" required>
-        <!-- <label for="example-text-input" class="form-control-label mt-3">Gaji Pokok <span style="color: red;">*</span></label>
-        <input type="number" class="form-control" placeholder="Gaji Pokok" v-model="karyawan.gaji_pokok" required> -->
-        <label for="example-text-input" class="form-control-label mt-3">Harian</label>
-        <input type="number" class="form-control" placeholder="Harian" v-model="karyawan.harian">
-        <label for="example-text-input" class="form-control-label mt-3">Bulanan</label>
-        <input type="number" class="form-control" placeholder="Bulanan" v-model="karyawan.bulanan">
-        <label for="example-text-input" class="form-control-label mt-3">TJ Jabatan / Skill</label>
-        <input type="number" class="form-control" placeholder="TJ Jabatan / Skill" v-model="karyawan.tj_jabatan_skill">
-        <label for="example-text-input" class="form-control-label mt-3">Transport</label>
-        <input type="number" class="form-control" placeholder="Transport" v-model="karyawan.transport">
-        <label for="example-text-input" class="form-control-label mt-3">Makan</label>
-        <input type="number" class="form-control" placeholder="Makan" v-model="karyawan.makan">
-        <label for="example-text-input" class="form-control-label mt-3">Nama Bank</label>
-        <input type="text" class="form-control" placeholder="Nama Bank" v-model="karyawan.bank">
-        <label for="example-text-input" class="form-control-label mt-3">No Rekening</label>
-        <input type="text" class="form-control" placeholder="No Rekening" v-model="karyawan.no_rek">
-        <label for="example-text-input" class="form-control-label mt-3">Atas Nama Rekening</label>
-        <input type="text" class="form-control" placeholder="Atas Nama Rekening" v-model="karyawan.an_rek">
-        <label for="example-text-input" class="form-control-label mt-3">NO BPJS TK</label>
-        <input type="text" class="form-control" placeholder="NO BPJS TK" v-model="karyawan.no_bpjs_tk">
-        <label for="example-text-input" class="form-control-label mt-3">NO BPJS KES</label>
-        <input type="text" class="form-control" placeholder="NO BPJS KES" v-model="karyawan.no_bpjs_kes">
-        <!-- <label for="example-text-input" class="form-control-label mt-3">Total Cuti <span style="color: red;">*</span></label>
-        <input type="number" class="form-control" placeholder="Total Cuti" v-model="karyawan.total_cuti" required> -->
+        <label for="example-text-input" class="form-control-label mt-3">Karyawan ID </label>
+        <input type="text" class="form-control" placeholder="Karyawan ID" v-model="akun.employee_id" required>
+        <label for="example-text-input" class="form-control-label mt-3">Full Name <span style="color: red;">*</span></label>
+        <input type="text" class="form-control" placeholder="Full Name" v-model="akun.full_name">
+        <label for="example-text-input" class="form-control-label mt-3">Username <span style="color: red;">*</span></label>
+        <input type="text" class="form-control" placeholder="Username" v-model="akun.username">
+        <label for="example-text-input" class="form-control-label mt-3">Password <span style="color: red;">*</span></label>
+        <input type="text" class="form-control" placeholder="Password" v-model="akun.password">
+        <label for="example-text-input" class="form-control-label mt-3">Role <span style="color: red;">*</span></label>
+        <select class="form-select" aria-label="Default select example" v-model="akun.role">
+          <option selected>Type</option>
+          <option value="Admin">Admin</option>
+          <option value="User">User</option>
+        </select>
       </div>
       <!-- footer -->
       <div class="row float-right mt-3">
@@ -207,18 +146,8 @@
       </div><hr>
       <!-- end header -->
       <div class="modal__content container">
-        <label for="example-text-input" class="form-control-label mt-3">ID Karyawan</label>
-        <input type="text" class="form-control" placeholder="ID Karyawan" v-model="search.id_karyawan">
         <label for="example-text-input" class="form-control-label mt-3">Nama</label>
-        <input type="text" class="form-control" placeholder="Nama" v-model="search.nama" required>
-        <label for="example-text-input" class="form-control-label mt-3">NIK</label>
-        <input type="text" class="form-control" placeholder="NIK" v-model="search.nik">
-        <label for="example-text-input" class="form-control-label mt-3">Jabatan</label>
-        <input type="text" class="form-control" placeholder="Jabatan" v-model="search.jabatan" required>
-        <label for="example-text-input" class="form-control-label mt-3">Unit</label>
-        <input type="text" class="form-control" placeholder="Unit" v-model="search.unit" required>
-        <label for="example-text-input" class="form-control-label mt-3">Status</label>
-        <input type="text" class="form-control" placeholder="Status" v-model="search.status" required>
+        <input type="text" class="form-control" placeholder="Nama" v-model="search" required>
       </div>
       <!-- footer -->
       <div class="row float-right mt-3">
@@ -252,7 +181,7 @@
       <div>
         <label for="example-text-input" class="form-control-label mt-3">Upload File <span style="color: red;">*</span></label>
         <input type="file" class="form-control" placeholder="Upload File" @change="filesChange" style="margin-bottom: 20px;">
-        <small>Download Template<a :href="storageUrl+'/template_import/Template Import Data Karyawan.xlsx'" style="color: blue;"> Import Data Karyawan</a></small>
+        <small>Download Template<a :href="storageUrl+'/template_import/Template Import Data Users.xlsx'" style="color: blue;"> Import Data Setting Approval</a></small>
         <div class="mt-2" v-if="tabelError.data.length !== 0 ">
           <table>
             <thead>
@@ -306,7 +235,9 @@ import { VueFinalModal } from 'vue-final-modal'
 // import ArgonPaginationItem from "@/components/ArgonPaginationItem.vue";
 import Api from '@/helpers/api';
 import config from '@/configs/config';
-import dataKaryawan from '@/services/dataKaryawan.service';
+import akun from '@/services/akun.service';
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
 
 export default {
   name: "tables",
@@ -328,7 +259,7 @@ export default {
       },
       formImport: {
         add: true,
-        title: "Import Data Karyawan",
+        title: "Import Data Setting Approval",
         show: false
       },
       formFilter: {
@@ -342,15 +273,8 @@ export default {
         data: []
       },
       storageUrl : config.storageUrl,
-      karyawan: {},
-      search: {
-        id_karyawan: '',
-        nama: '',
-        nik: '',
-        jabatan: '',
-        unit: '',
-        status: '',
-      },
+      akun: {},
+      search: '',
       apiUrl :config.apiUrl,
     };
   },
@@ -361,12 +285,15 @@ export default {
   methods: {
     get(param){
       let context = this;               
-      Api(context, dataKaryawan.index({id_karyawan: context.search.id_karyawan, nama: context.search.nama, nik: context.search.nik, jabatan: context.search.jabatan, unit: context.search.unit, status: context.search.status,})).onSuccess(function(response) {    
-          context.table.data = response.data.data.data;
+      Api(context, akun.index({search: this.search})).onSuccess(function(response) {    
+          context.table.data = response.data.data.data.data;
+          console.log(response.data.data.data.data)
+          context.notify('Data Retrieved Successfully', 'success')
       }).onError(function(error) {                    
           if (error.response.status == 404) {
               context.table.data = [];
           }
+          context.notify('Data Retrieved Failed', 'error')
       }).onFinish(function() { 
          context.formFilter.show  = false;
       })
@@ -382,11 +309,11 @@ export default {
       this.form.add   = true;
       this.form.show  = true;
       this.form.title = "Add Data";
-      this.karyawan   = {};
+      this.akun   = {};
     },
     // edit(id) {
     //   let context = this;               
-    //   Api(context, dataKaryawan.show(id)).onSuccess(function(response) {
+    //   Api(context, akun.show(id)).onSuccess(function(response) {
     //     console.log(response.data.data)
     //       context.karyawan   = response.data.data;
     //       context.form.show  = true;
@@ -399,42 +326,29 @@ export default {
       let context  = this;
       let formData = new FormData();
 
-      if (context.karyawan.nama != undefined && context.karyawan.jabatan != undefined && context.karyawan.unit != undefined && context.karyawan.status != undefined) {
-        formData.append('id_karyawan', context.karyawan.id_karyawan);
-        formData.append('nama', context.karyawan.nama);
-        formData.append('nik', (this.karyawan.nik == undefined) ? '' : this.karyawan.nik);
-        formData.append('jabatan', context.karyawan.jabatan);
-        formData.append('unit', context.karyawan.unit);
-        formData.append('status', context.karyawan.status);
-        // formData.append('gaji_pokok', context.karyawan.gaji_pokok);
-        formData.append('harian', (this.karyawan.harian == undefined) ? '' : this.karyawan.harian);
-        formData.append('bulanan', (this.karyawan.bulanan == undefined) ? '' : this.karyawan.bulanan);
-        formData.append('tj_jabatan_skill', (this.karyawan.tj_jabatan_skill == undefined) ? '' : this.karyawan.tj_jabatan_skill);
-        formData.append('transport', (this.karyawan.transport == undefined) ? '' : this.karyawan.transport);
-        formData.append('makan', (this.karyawan.makan == undefined) ? '' : this.karyawan.makan);
-        formData.append('bank', (this.karyawan.bank == undefined) ? '' : this.karyawan.bank);
-        formData.append('no_rek', (this.karyawan.no_rek == undefined) ? '' : this.karyawan.no_rek);
-        formData.append('an_rek', (this.karyawan.an_rek == undefined) ? '' : this.karyawan.an_rek);
-        formData.append('no_bpjs_tk', (this.karyawan.no_bpjs_tk == undefined) ? '' : this.karyawan.no_bpjs_tk);
-        formData.append('no_bpjs_kes', (this.karyawan.no_bpjs_kes == undefined) ? '' : this.karyawan.no_bpjs_kes);
-        // formData.append('total_cuti', context.karyawan.total_cuti);
+      if (context.akun.full_name != undefined && context.akun.username != undefined && context.akun.password != undefined && context.akun.role != undefined) {
+        formData.append('employee_id', (context.akun.employee_id == undefined) ? '' : context.akun.employee_id);
+        formData.append('full_name', context.akun.full_name);
+        formData.append('username', context.akun.username);
+        formData.append('password', context.akun.password);
+        formData.append('role', context.akun.role);
       }else{
         return alert('Field Bintang Merah Wajib Di Isi')
       }
 
       if (context.form.title == 'Add Data') {
-          api = Api(context, dataKaryawan.create(formData));
+          api = Api(context, akun.create(formData));
       } else {
-          api = Api(context, dataKaryawan.update(this.karyawan.id, formData));
+          api = Api(context, akun.update(this.karyawan.id, formData));
       }
       // eslint-disable-next-line no-unused-vars
       api.onSuccess(function(response) {
         context.get();
         context.form.show = false;
-          // context.notifyVue((context.formTitle === 'Add Data') ? 'Data Berhasil di Simpan' : 'Data Berhasil di Update', 'top', 'right', 'info')
+        context.notify((context.form === 'Add Data') ? 'Data Berhasil di Simpan' : 'Data Berhasil di Update', 'success')
       // eslint-disable-next-line no-unused-vars
-      }).onError(function(error) {                    
-          // context.notifyVue((context.formTitle === 'Add Data') ? 'Data Gagal di Simpan' : 'Data Gagal di Update' , 'top', 'right', 'danger')
+      }).onError(function(error) { 
+        context.notify((context.form != 'Add Data') ? 'Data Gagal di Simpan' : 'Data Gagal di Update', 'error')                   
       }).onFinish(function() {  
       })
       .call();
@@ -444,15 +358,15 @@ export default {
       if (r == true) {
         let context = this;
 
-        Api(context, dataKaryawan.delete(id)).onSuccess(function(response) {
+        Api(context, akun.delete(id)).onSuccess(function(response) {
             context.get();
-            // context.notifyVue('Data Berhasil di Hapus', 'top', 'right', 'info')
+            context.notify('Data Successfully Deleted', 'success')
         }).call();
       }
     },
     modalImport(){
       this.formImport.show  = true;
-      this.formImport.title = "Import Data Karyawan";
+      this.formImport.title = "Import Data Setting Approval";
       this.tabelError.data  = [];
     },
     filesChange(e) {
@@ -470,20 +384,32 @@ export default {
         return alert('File Import Not Found')
       }
 
-      api = Api(context, dataKaryawan.import(formData));
+      api = Api(context, akun.import(formData));
       api.onSuccess(function(response) {
           context.onLoading = false;
           context.get();
           context.formImport.show = false;
-          // context.notifyVue('Data Berhasil di Import', 'top', 'right', 'info')
+          context.notify('Import Data Success', 'success')
       }).onError(function(error) {      
           context.tabelError.data = error.response.data.data;              
-          // context.notifyVue('Data Gagal di Import' , 'top', 'right', 'danger')
+          context.notify('Import Data Failed', 'error')
           context.onLoading = false;
       }).onFinish(function() {  
       })
       .call();
     },
+    notify(message, type) {
+      if (type == 'success') {
+        toast.success(message, {
+          autoClose: 2000,
+        }); // ToastOptions
+      }else{
+        toast.error(message, {
+          autoClose: 2000,
+        }); // ToastOptions
+      }
+    },
+
   }
 };
 </script>

@@ -17,99 +17,51 @@
       </li>
       <li class="nav-item">
         <sidenav-item
-          url="/data-karyawan"
+          url="/barang-masuk"
           :class="getRoute() === 'tables' ? 'active' : ''"
-          navText="Data Karyawan"
+          navText="Barang Masuk"
         >
           <template v-slot:icon>
             <i
-              class="ni ni-single-02 text-dark text-sm opacity-10"
+              class="ni ni-cloud-download-95 text-success text-sm opacity-10"
             ></i>
           </template>
         </sidenav-item>
       </li>
       <li class="nav-item">
         <sidenav-item
-          url="/data-absensi"
+          url="/barang-keluar"
           :class="getRoute() === 'virtual-reality' ? 'active' : ''"
-          navText="Data Absensi"
+          navText="Barang Keluar"
         >
           <template v-slot:icon>
-            <i class="ni ni-calendar-grid-58 text-warning text-sm opacity-10"></i>
+            <i class="ni ni-delivery-fast text-warning text-sm opacity-10"></i>
           </template>
         </sidenav-item>
       </li>
       <li class="nav-item">
         <sidenav-item
-          url="/data-payroll"
+          url="/stock-barang"
           :class="getRoute() === 'billing' ? 'active' : ''"
-          navText="Data Payroll"
+          navText="Stock Barang"
         >
           <template v-slot:icon>
-            <i class="ni ni-credit-card text-success text-sm opacity-10"></i>
+            <i class="ni ni-collection text-dark text-sm opacity-10"></i>
           </template>
         </sidenav-item>
       </li>
-      <!-- <li class="nav-item">
+      <li class="nav-item">
         <sidenav-item
-          url="/rtl-page"
+          url="/account"
           :class="getRoute() === 'rtl-page' ? 'active' : ''"
-          navText="Setting"
+          navText="Account"
         >
           <template v-slot:icon>
-            <i class="ni ni-world-2 text-danger text-sm opacity-10"></i>
-          </template>
-        </sidenav-item>
-      </li> -->
-      <!-- <li class="mt-3 nav-item">
-        <h6
-          v-if="this.$store.state.isRTL"
-          class="text-xs ps-4 text-uppercase font-weight-bolder opacity-6"
-          :class="this.$store.state.isRTL ? 'me-4' : 'ms-2'"
-        >
-          صفحات المرافق
-        </h6>
-        <h6
-          v-else
-          class="text-xs ps-4 text-uppercase font-weight-bolder opacity-6"
-          :class="this.$store.state.isRTL ? 'me-4' : 'ms-2'"
-        >
-          ACCOUNT PAGES
-        </h6>
-      </li>
-      <li class="nav-item">
-        <sidenav-item
-          url="/profile"
-          :class="getRoute() === 'profile' ? 'active' : ''"
-          :navText="this.$store.state.isRTL ? 'حساب تعريفي' : 'Profile'"
-        >
-          <template v-slot:icon>
-            <i class="ni ni-single-02 text-dark text-sm opacity-10"></i>
+            <i class="ni ni-satisfied text-primary text-sm opacity-10"></i>
           </template>
         </sidenav-item>
       </li>
-      <li class="nav-item">
-        <sidenav-item
-          url="/signin"
-          :class="getRoute() === 'signin' ? 'active' : ''"
-          :navText="this.$store.state.isRTL ? 'تسجيل الدخول' : 'Sign In'"
-        >
-          <template v-slot:icon>
-            <i class="ni ni-single-copy-04 text-danger text-sm opacity-10"></i>
-          </template>
-        </sidenav-item>
-      </li>
-      <li class="nav-item">
-        <sidenav-item
-          url="/signup"
-          :class="getRoute() === 'signup' ? 'active' : ''"
-          :navText="this.$store.state.isRTL ? 'اشتراك' : 'Sign Up'"
-        >
-          <template v-slot:icon>
-            <i class="ni ni-collection text-info text-sm opacity-10"></i>
-          </template>
-        </sidenav-item>
-      </li> -->
+
     </ul>
   </div>
 </template>

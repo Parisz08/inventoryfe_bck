@@ -179,7 +179,7 @@
           </li> -->
           <li class="nav-item d-flex align-items-center text-white">
             <!-- <i class="fa fa-user" ></i> -->
-            <span class="d-sm-inline d-none ms-sm-2 me-sm-2">Hallo Admin</span>
+            <span class="d-sm-inline d-none ms-sm-2 me-sm-2">Hallo {{ full_name }}</span>
             <i class="fa fa-sign-out" @click="logout()" style="cursor: pointer;" title="Logout"></i>
           </li>
         </ul>
@@ -190,17 +190,23 @@
 <script>
 // import Breadcrumbs from "../Breadcrumbs.vue";
 import { mapMutations, mapActions } from "vuex";
+import Api from '@/helpers/api';
+import akun from '@/services/akun.service';
 
 export default {
   name: "navbar",
   data() {
     return {
-      showMenu: false
+      showMenu: false,
+      full_name: '',
     };
   },
   props: ["minNav", "textWhite"],
   created() {
     this.minNav;
+  },
+  mounted() {
+    this.getRole();
   },
   methods: {
     ...mapMutations(["navbarMinimize", "toggleConfigurator"]),
@@ -214,6 +220,15 @@ export default {
       localStorage.removeItem('token');
       localStorage.setItem('authenticated', false)  
       this.$router.push('/login')
+    },
+    getRole(){
+      let context = this;     
+      context.onLoading = true;          
+      Api(context, akun.indexProfile()).onSuccess(function(response) {
+          context.full_name = response.data.data[0].full_name;
+      }).onError(function(error) {  
+      })
+      .call() 
     },
   },
   components: {
