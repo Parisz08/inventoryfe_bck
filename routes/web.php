@@ -26,26 +26,45 @@ $router->get('/', function () use ($router) {
     $router->get('create_akun_default', 'AkunController@create_akun_default');
 
     // EXPORT EXCEL
-    $router->get('export-excel/karyawan', 'ExportExcelController@karyawan');
-    $router->get('export-excel/absen', 'ExportExcelController@absen');
-    $router->get('export-excel/payroll', 'ExportExcelController@payroll');
-    $router->get('export-excel/payroll-bank', 'ExportExcelController@payrollBank');
+    $router->get('export-excel/barang-masuk', 'ExportExcelController@exportBarangMasuk');
+    $router->get('export-excel/barang-keluar', 'ExportExcelController@exportBarangKeluar');
+    $router->get('export-excel/stock-barang', 'ExportExcelController@exportStockBarang');
     // PDF
-    $router->get('print-pdf/ehp', 'PrintPdfController@printEhp');
-    $router->get('print-slip-gaji', 'PrintPdfController@printSlipGaji');
-    $router->get('print-pdf/spl', 'PrintPdfController@printSpl');
+    $router->get('print-pdf/surat-barang-keluar', 'PrintPdfController@printSuratBarangKeluar');
+    $router->get('print-pdf/stock-barang-qr-code', 'PrintPdfController@printStockQRCode');
+    // $router->get('print-pdf/spl', 'PrintPdfController@printSpl');
 
+    $router->get('barang-masuk/cek-material', 'BarangMasukController@cekMaterial');
 // ================================= FOR LOGIN ==========================================================
 $router->group(['middleware' => 'jwt.tymon'], function () use ($router){
+    $router->get('spb/index', 'SpbController@index');
+$router->get('spb/show/{id}', 'SpbController@show');
+$router->post('spb/create', 'SpbController@store');
+$router->post('spb/approve/{id}', 'SpbController@approve');
+$router->post('spb/condition/{id}', 'SpbController@addCondition');
+$router->post('spb/condition/select/{id}', 'SpbController@selectCondition');
+$router->post('spb/disposisi/{id}', 'SpbController@disposisi');
+$router->post('spb/issue-po/{id}', 'SpbController@issuePO');
+$router->post('spb/resolusi/{id}', 'SpbController@resolusi');
+$router->post('spb/invoice/{id}', 'SpbController@invoice');
+$router->post('spb/payment/{id}', 'SpbController@payment');
+$router->post('spb/delete/{id}', 'SpbController@destroy');
+
+// VENDOR
+$router->get('vendor/index', 'VendorController@index');
+$router->post('spb/condition/select/{id}', 'SpbController@selectCondition');
+$router->post('spb/delete/{id}', 'SpbController@destroy');
+
     // DASHBOARD
     $router->get('dashboard/index', 'DashboardController@index');
-    $router->get('dashboard/show-ehp', 'DashboardController@showEhp');
+    $router->get('dashboard/barang-min-stock', 'DashboardController@barangMinStock');
+    $router->get('dashboard/barang-sering-terpakai', 'DashboardController@barangSeringTerpakai');
     // BARANG MASUK
     $router->get('barang-masuk/index', 'BarangMasukController@index');
     $router->get('barang-masuk/show/{id}', 'BarangMasukController@show');
-    $router->get('barang-masuk/cek-material', 'BarangMasukController@cekMaterial');
     $router->post('barang-masuk/create', 'BarangMasukController@store');
     $router->post('barang-masuk/update/{id}', 'BarangMasukController@update');
+    $router->post('barang-masuk/duplicate', 'BarangMasukController@duplicate');
     $router->post('barang-masuk/delete/{id}', 'BarangMasukController@destroy');
     // BARANG KELUAR
     $router->get('barang-keluar/index', 'BarangKeluarController@index');
@@ -53,6 +72,7 @@ $router->group(['middleware' => 'jwt.tymon'], function () use ($router){
     $router->get('barang-keluar/get-material', 'BarangKeluarController@getMaterial');
     $router->post('barang-keluar/create', 'BarangKeluarController@store');
     $router->post('barang-keluar/update/{id}', 'BarangKeluarController@update');
+    $router->post('barang-keluar/update-description/{id}', 'BarangKeluarController@updateDesc');
     $router->post('barang-keluar/delete/{id}', 'BarangKeluarController@destroy');
     // STOCK BARANG
     $router->get('stock-barang/index', 'StockBarangController@index');

@@ -7,83 +7,55 @@ use App\Http\Controllers\Controller;
 use DB;
 use Carbon\Carbon;
 use App\Karyawan;
+use App\StockBarang;
 
 class PrintPdfController extends Controller
 {
     
-    public function printSlipGaji($travel_latter_no)
+    public function printSuratBarangKeluar(Request $request)
     {
-        $monthPeriode = strtoupper(\Carbon\Carbon::parse($peroideStart)->formatLocalized('%B %Y'));
-
-        $data =  Karyawan::withCount(['totalKerja' => function($query) use ($peroideStart, $peroideEnd, $idKaryawan) {
-                         $query->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd)->where('id_karyawan', $idKaryawan);
-                      },
-                      'totalAlpa' => function($query) use ($peroideStart, $peroideEnd, $idKaryawan) {
-                         $query->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd)->where('id_karyawan', $idKaryawan);
-                      },
-                      'totalSakit' => function($query) use ($peroideStart, $peroideEnd, $idKaryawan) {
-                         $query->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd)->where('id_karyawan', $idKaryawan);
-                      },
-                      'totalIjin' => function($query) use ($peroideStart, $peroideEnd, $idKaryawan) {
-                         $query->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd)->where('id_karyawan', $idKaryawan);
-                      },
-                      'totalCuti' => function($query) use ($peroideStart, $peroideEnd, $idKaryawan) {
-                         $query->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd)->where('id_karyawan', $idKaryawan);
-                      },
-                      'totalOt' => function($query) use ($peroideStart, $peroideEnd, $idKaryawan) {
-                         $query->select(DB::raw('SUM(type_ot)'))->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd)->where('id_karyawan', $idKaryawan);
-                      }])
-                      ->with(['relPayroll' => function($query) use ($peroideStart, $peroideEnd, $idKaryawan) {
-                         $query->where('periode_start', '>=', $peroideStart)->where('periode_end', '<=', $peroideEnd)->where('id_karyawan', $idKaryawan);
-                      }])->where('id_karyawan', $idKaryawan)->first();
-
-            $relPay = json_decode($data, true);
-            // $data   = array('data' => $masterFix, 'relPay' =>$relPay['rel_payroll'], 'periode' => $monthPeriode);
-
-        return view('pdf.slipGaji', compact('data', 'countWeight'));
-    }
-
-    public function printSpl(Request $request)
-    {
-         $data = DB::table('approval_lembur')
-                ->where('code_spl', $request->code_spl)
-                ->orderBy('created_at', 'DESC')
+        $data = DB::table('barang_keluar')
+                ->leftJoin('stock_barang', 'barang_keluar.material_code', '=', 'stock_barang.material_code')
+                ->select('barang_keluar.id','barang_keluar.material_code','material_name','unit','stock_barang','qty','divisi','description','date','diserahkan','disetujui','diterima','barang_keluar.created_by','barang_keluar.created_at')
+                ->where('barang_keluar.no_sj', $request->no_sj)
                 ->get();
 
-        return view('pdf.printSpl', compact('data'));
+        return view('pdf.suratBarangKeluar', compact('data'));
     }
 
-   public function printEhp(Request $request)
-   {
-      // ====================================  EHP  ============================
-        $peroideStart = $request->periode_start;
-        $peroideEnd   = $request->periode_end;
+    public function printStockQRCode(Request $request)
+    {
+        $master = StockBarang::withCount(['totalBarangMasuk' => function($query) {
+                        $query->select(DB::raw('SUM(qty)'));
+                    },
+                    'totalBarangKeluar' => function($query) {
+                        $query->select(DB::raw('SUM(qty)'));
+                    }]);
+        if(!empty($request->input('material_code'))){
+            $result = $master->where('material_code', $request->material_code);
+        }
+        if(!empty($request->input('material_name'))){
+            $result = $master->where('material_name', 'LIKE', "%".$request->material_name."%");
+        }
+        if(!empty($request->input('type'))){
+            $result = $master->where('type', 'LIKE', "%".$request->type."%");
+        }
+        if(!empty($request->input('unit'))){
+            $result = $master->where('unit', 'LIKE', "%".$request->unit."%");
+        }
+        if(!empty($request->input('storage_location'))){
+            $result = $master->where('storage_location', 'LIKE', "%".$request->storage_location."%");
+        }
+        
+        if (empty($request->input('material_code')) && empty($request->input('material_name')) && empty($request->input('type')) && empty($request->input('unit')) && empty($request->input('storage_location')) ) {
+            $result = $master->orderBy('material_name', 'ASC')->get();
+        }else{
+            $result = $master->orderBy('material_name', 'ASC')->get();
+        }
 
-         $master =  Karyawan::withCount(['totalKerja' => function($query) use ($peroideStart, $peroideEnd) {
-                         $query->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd);
-                      },
-                      'totalOt' => function($query) use ($peroideStart, $peroideEnd) {
-                         $query->select(DB::raw('SUM(type_ot)'))->whereDate('date', '>=', $peroideStart)->whereDate('date', '<=', $peroideEnd);
-                      }]);
-                      // ->select('nama','unit','id_karyawan')
-                      if(!empty($request->input('nama'))){
-                            $result = $master->where('nama', 'LIKE', "%".$request->nama."%");
-                      }
-                      if(!empty($request->input('jabatan'))){
-                            $result = $master->where('jabatan', 'LIKE', "%".$request->jabatan."%");
-                      }
-                      if(!empty($request->input('unit'))){
-                            $result = $master->where('unit', 'LIKE', "%".$request->unit."%");
-                      }
+        $data  = $result;
 
-                      if (empty($request->input('nama')) && empty($request->input('jabatan')) && empty($request->input('unit'))  ) {
-                            $result = $master->orderBy('total_kerja_count', 'desc')->orderBy('total_ot_count', 'desc')->get();
-                      }else{
-                            $result = $master->orderBy('total_kerja_count', 'desc')->orderBy('total_ot_count', 'desc')->get();
-                      }
-         $data = $result;
-
-     return view('pdf.printEhp', compact('data', 'peroideStart', 'peroideEnd'));
-   }
+        return view('pdf.printStockQRCode', compact('data'));
+    }
 
 }

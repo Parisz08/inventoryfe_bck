@@ -7,32 +7,26 @@ use App\Http\Controllers\Controller;
 use DB;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\KaryawanExport;
-use App\Exports\AbsenExport;
-use App\Exports\PayrollExport;
-use App\Exports\PayrollBankExport;
+use App\Exports\BarangMasukExport;
+use App\Exports\BarangKeluarExport;
+use App\Exports\StockBarangExport;
 
 class ExportExcelController extends Controller
 {
     
-    public function karyawan(Request $request)
+    public function exportBarangMasuk(Request $request)
     {
-        return Excel::download(new KaryawanExport($request), 'Data Karyawan.xlsx');
+        return Excel::download(new BarangMasukExport($request), 'Data Barang Masuk.xlsx');
     }
 
-    public function absen(Request $request)
+    public function exportBarangKeluar(Request $request)
     {
-        return Excel::download(new AbsenExport($request), 'Data Absen.xlsx');
+        return Excel::download(new BarangKeluarExport($request), 'Data Barang Keluar.xlsx');
     }
 
-    public function payroll(Request $request)
+    public function exportStockBarang(Request $request)
     {
-        return Excel::download(new PayrollExport($request), 'Data Payroll.xlsx');
-    }
-
-    public function payrollBank(Request $request)
-    {
-        return Excel::download(new PayrollBankExport($request), 'Data Payroll Per Bank.xlsx');
+        return Excel::download(new StockBarangExport($request), 'Data Stock Barang.xlsx');
     }
 
 }

@@ -17,18 +17,39 @@ class BarangKeluarController extends Controller
     {
         $master = DB::table('barang_keluar')
                     ->leftJoin('stock_barang', 'barang_keluar.material_code', '=', 'stock_barang.material_code')
-                    ->select('barang_keluar.id','barang_keluar.material_code','material_name','qty','description','divisi','no_sj','date','diserahkan','disetujui','diterima','barang_keluar.created_by','barang_keluar.created_at');
-        if(!empty($request->input('material_code'))){
-            $result = $master->where('material_code', $request->material_code);
+                    ->select('barang_keluar.id','barang_keluar.material_code','material_name','type','unit','qty','description','divisi','no_sj','date','diserahkan','disetujui','diterima','barang_keluar.created_by','barang_keluar.created_at');
+
+        if(!empty($request->input('no_sj'))){
+            $result = $master->where('no_sj', $request->no_sj);
         }
-        if(!empty($request->input('note'))){
-            $result = $master->where('note', 'LIKE', "%".$request->note."%");
+        if(!empty($request->input('material_code'))){
+            $result = $master->where('barang_keluar.material_code', $request->material_code);
+        }
+        if(!empty($request->input('material_name'))){
+            $result = $master->where('material_name', 'LIKE', "%".$request->material_name."%");
+        }
+        if(!empty($request->input('type'))){
+            $result = $master->where('type', $request->type);
+        }
+        if(!empty($request->input('unit'))){
+            $result = $master->where('unit', $request->unit);
+        }
+        if(!empty($request->input('description'))){
+            $result = $master->where('description', 'LIKE', "%".$request->description."%");
+        }
+        if(!empty($request->input('divisi'))){
+            $result = $master->where('divisi', $request->divisi);
         }
         if(!empty($request->input('date'))){
-            $result = $master->where('date', 'LIKE', "%".$request->date."%");
+            $date      = $request->input('date');
+            $dateStart = date(substr($date, 0, 10));
+            $dateEnd   = date(substr($date, -10));
+
+            $result = $master->whereDate('date', '>=', $dateStart);
+            $result = $master->whereDate('date', '<=', $dateEnd);
         }
         
-        if (empty($request->input('material_code')) && empty($request->input('note')) && empty($request->input('date'))) {
+        if (empty($request->input('no_sj')) && empty($request->input('material_code')) && empty($request->input('material_name')) && empty($request->input('type')) && empty($request->input('unit')) && empty($request->input('description')) && empty($request->input('divisi')) && empty($request->input('date'))) {
             $result = $master->orderBy('barang_keluar.created_at', 'DESC')->get();
         }else{
             $result = $master->orderBy('barang_keluar.created_at', 'DESC')->get();
@@ -67,15 +88,15 @@ class BarangKeluarController extends Controller
     {
         $data = DB::table('barang_keluar')
                 ->leftJoin('stock_barang', 'barang_keluar.material_code', '=', 'stock_barang.material_code')
-                ->select('barang_keluar.id','barang_keluar.material_code','material_name','unit','stock_barang','qty','description','date','diserahkan','disetujui','diterima','barang_keluar.created_by','barang_keluar.created_at')
+                ->select('barang_keluar.id','barang_keluar.material_code','material_name','unit','stock_barang','qty','divisi','description','date','diserahkan','disetujui','diterima','barang_keluar.created_by','barang_keluar.created_at')
                 ->where('barang_keluar.no_sj', $request->no_sj)
                 ->get();
 
         if (is_null($data)) {
-            return Responses::sendError($data, 'Barang Masuk Is Empty');
+            return Responses::sendError($data, 'Barang Keluar Is Empty');
         }
 
-        return Responses::sendResponse($data, 'Barang Masuk Retrieved Successfully');
+        return Responses::sendResponse($data, 'Barang Keluar Retrieved Successfully');
     }
 
     public function store(Request $request)
@@ -94,24 +115,7 @@ class BarangKeluarController extends Controller
             return Responses::sendError($validator->errors(), 'Validation Error');
         }
 
-        // // SEQUENCE
-        // $lastSeq = DB::table('stock_barang')->max(DB::raw('substr(material_code, -4)'));
-        // // jika jo belum ada
-        // if (empty($lastSeq)) {
-        //     return $seq = str_pad(1, 4, '0', STR_PAD_LEFT);
-        // }else{
-        //     $sum = substr($lastSeq, -4) + 1;
-        //     $seq = str_pad($sum, 4, '0', STR_PAD_LEFT);
-        // }
-
-        // $cekMaterial = StockBarang::where('material_code', $request->input('material_code'))->orWhere('material_name', $request->input('material_name'))->first();
-        // if ($cekMaterial) {
-        //     $material_code = $cekMaterial->material_code;
-        // }else{
-        //     $material_code = 'INVBCK'.$seq;
-        // }
-
-        // CREATE HISTORY BARANG MASUK
+        // CREATE HISTORY BARANG KELUAR
         $cariMaterial = DB::table('stock_barang')->where('id', $request->id)->first();
 
         $data                = new BarangKeluar;
@@ -119,112 +123,92 @@ class BarangKeluarController extends Controller
         $data->no_sj         = $request->no_sj;
         $data->date          = $request->date;
         $data->divisi        = $request->divisi;
+        $data->qty           = 1;
         $data->diserahkan    = $request->diserahkan;
         $data->disetujui     = $request->disetujui;
         $data->diterima      = $request->diterima;
         $data->created_by    = LoggedUser::get()['user']->full_name;
         $data->save();
 
-        // CREATE OR UPDATE STOCK BARANG
-        // $data = StockBarang::updateOrCreate([
-        //     'material_name' => $request->input('material_name'),
-        // ],[
-        //     'material_code'    => $material_code,
-        //     'material_name'    => $request->input('material_name'),
-        //     'type'             => $request->input('type'),
-        //     'unit'             => $request->input('unit'),
-        //     'stock_barang'     => $request->input('stock_barang'),
-        //     'min_stock'        => $request->input('min_stock'),
-        //     'storage_location' => $request->input('storage_location'),
-        //     'created_by'       => LoggedUser::get()['user']->full_name,
-        // ]);
+        // UPDATE STOCK BARANG
+        $getDataStock    = DB::table('stock_barang')->where('material_code', $cariMaterial->material_code)->first();
 
-        return Responses::sendResponse($data, 'Barang Masuk Created Successfully');
+        DB::table('stock_barang')->where('material_code', $cariMaterial->material_code)->update([
+            'stock_barang' => ($getDataStock->stock_barang - 1),
+            'created_by'   => LoggedUser::get()['user']->full_name,
+        ]);
+
+        return Responses::sendResponse($data, 'Barang Keluar Created Successfully');
     }
 
     public function update(Request $request, $id)
     {
         $validator = validator::make($request->all(), [
-            'material_code'    => 'required',
-            'material_name'    => 'required',
-            'type'             => 'required',
-            'unit'             => 'required',
-            'qty'              => 'required',
-            'min_stock'        => 'required',
-            'storage_location' => 'required',
-            'date'             => 'required',
+            'qty' => 'required',
         ]);
 
         if($validator->fails()){
             return Responses::sendError($validator->errors(), 'Validation Error');
         }
 
-        // CREATE HISTORY BARANG MASUK
-        $data                = BarangKeluar::find($id);
-        $data->material_code = $request->input('material_code');
-        $data->qty           = $request->input('qty');
-        $data->note          = ($request->input('note') == '') ? null : $request->input('note');
-        $data->date          = $request->input('date');
-        $data->created_by    = LoggedUser::get()['user']->full_name;
-        $data->save();
+        // UPDATE DULU KE STOCK BARANG AWAL
+        $getBarangKeluar = DB::table('barang_keluar')->where('id', $id)->first();
+        $getDataStock    = DB::table('stock_barang')->where('material_code', $getBarangKeluar->material_code)->first();
 
-        // CREATE OR UPDATE STOCK BARANG
-        $data = StockBarang::updateOrCreate([
-            'material_name' => $request->input('material_name'),
-        ],[
-            'material_code'    => $request->input('material_code'),
-            'material_name'    => $request->input('material_name'),
-            'type'             => $request->input('type'),
-            'unit'             => $request->input('unit'),
-            'stock_barang'     => $request->input('stock_barang'),
-            'min_stock'        => $request->input('min_stock'),
-            'storage_location' => $request->input('storage_location'),
-            'created_by'       => LoggedUser::get()['user']->full_name,
+        DB::table('stock_barang')->where('material_code', $getDataStock->material_code)->update([
+            'stock_barang' => ($getDataStock->stock_barang + $getBarangKeluar->qty),
+            'updated_by'   => LoggedUser::get()['user']->full_name,
         ]);
 
-        return Responses::sendResponse($data, 'Barang Masuk Updated Successfully');
+        // UPDATE QTY HISTORY BARANG KELUAR
+        $data             = BarangKeluar::find($id);
+        $data->qty        = $request->input('qty');
+        $data->updated_by = LoggedUser::get()['user']->full_name;
+        $data->save();
+
+        // UPDATE STOCK BARANG
+        $getBarangKeluar = DB::table('barang_keluar')->where('id', $id)->first();
+        $getDataStock    = DB::table('stock_barang')->where('material_code', $getBarangKeluar->material_code)->first();
+
+        DB::table('stock_barang')->where('material_code', $getDataStock->material_code)->update([
+            'stock_barang' => ($getDataStock->stock_barang - $getBarangKeluar->qty),
+            'updated_by'   => LoggedUser::get()['user']->full_name,
+        ]);
+
+        return Responses::sendResponse($data, 'Barang Keluar Updated Successfully');
+    }
+
+    public function updateDesc(Request $request, $id)
+    {
+        $validator = validator::make($request->all(), [
+            'description' => 'required',
+        ]);
+
+        if($validator->fails()){
+            return Responses::sendError($validator->errors(), 'Validation Error');
+        }
+
+        // UPDATE DESC HISTORY BARANG KELUAR
+        $data              = BarangKeluar::find($id);
+        $data->description = $request->input('description');
+        $data->updated_by  = LoggedUser::get()['user']->full_name;
+        $data->save();
+
+        return Responses::sendResponse($data, 'Barang Keluar Updated Successfully');
     }
 
     public function destroy($id)
     {
-        $getQtyBM       = DB::table('barang_masuk')->where('id', $id)->select('material_code','qty')->first();
+        $getQtyBM       = DB::table('barang_keluar')->where('id', $id)->select('material_code','qty')->first();
         $getStockBarang = DB::table('stock_barang')->where('material_code', $getQtyBM->material_code)->select('stock_barang')->first();
 
         // UPDATE STOCK BARANG
         if ($getStockBarang) {
-            DB::table('stock_barang')->where('material_code', $getQtyBM->material_code)->update([ 'stock_barang' => ($getStockBarang->stock_barang - $getQtyBM->qty) ]);
+            DB::table('stock_barang')->where('material_code', $getQtyBM->material_code)->update([ 'stock_barang' => ($getStockBarang->stock_barang + $getQtyBM->qty) ]);
         }
 
         $data = BarangKeluar::destroy($id);
 
-        return Responses::sendResponse($data, 'Barang Masuk Deleted Successfully');
-    }
-
-    public function changePassFoto(Request $request)
-    {     
-        // JIKA ADA FOTO YANG DI RUBAH
-        if ($request->hasFile('foto')) {
-            $attach    = $request->foto;
-            $original  = $attach->getClientOriginalName();
-            $file      = pathinfo($original, PATHINFO_FILENAME);
-            $extension = pathinfo($original, PATHINFO_EXTENSION);
-            $filename  = $file.'.'.$extension;
-
-            $attach->move(storage_path('foto_karyawan'), $filename );
-
-            $data                = BarangKeluar::find($request->id_karyawan);
-            $data->foto_karyawan = $filename;
-            $data->updated_by    = LoggedUser::get()['user']->full_name;
-            $data->save();
-        }
-
-        // JIKA PASSWORD DI RUBAH
-        if (!empty($request->password)) {
-            DB::table('users')->where('employee_id', $request->employee_id)->update([
-                'password' => password_hash($request->password, PASSWORD_BCRYPT),
-            ]);
-        }
-
-        return Responses::sendResponse(null, 'Change Data Successfully');
+        return Responses::sendResponse($data, 'Barang Keluar Deleted Successfully');
     }
 }

@@ -17,18 +17,29 @@ class BarangMasukController extends Controller
     {
         $master = DB::table('barang_masuk')
                     ->leftJoin('stock_barang', 'barang_masuk.material_code', '=', 'stock_barang.material_code')
-                    ->select('barang_masuk.id','barang_masuk.material_code','material_name','qty','note','date','barang_masuk.created_by','barang_masuk.created_at');
+                    ->select('barang_masuk.id','barang_masuk.material_code','material_name','type','qty','note','date','barang_masuk.created_by','barang_masuk.created_at');
         if(!empty($request->input('material_code'))){
-            $result = $master->where('material_code', $request->material_code);
+            $result = $master->where('barang_masuk.material_code', $request->material_code);
+        }
+        if(!empty($request->input('material_name'))){
+            $result = $master->where('material_name', 'LIKE', "%".$request->material_name."%");
+        }
+        if(!empty($request->input('type'))){
+            $result = $master->where('type', 'LIKE', "%".$request->type."%");
         }
         if(!empty($request->input('note'))){
             $result = $master->where('note', 'LIKE', "%".$request->note."%");
         }
         if(!empty($request->input('date'))){
-            $result = $master->where('date', 'LIKE', "%".$request->date."%");
+            $date      = $request->input('date');
+            $dateStart = date(substr($date, 0, 10));
+            $dateEnd   = date(substr($date, -10));
+
+            $result = $master->whereDate('date', '>=', $dateStart);
+            $result = $master->whereDate('date', '<=', $dateEnd);
         }
         
-        if (empty($request->input('material_code')) && empty($request->input('note')) && empty($request->input('date'))) {
+        if (empty($request->input('material_code')) && empty($request->input('material_name')) && empty($request->input('type')) && empty($request->input('note')) && empty($request->input('date'))) {
             $result = $master->orderBy('barang_masuk.created_at', 'DESC')->get();
         }else{
             $result = $master->orderBy('barang_masuk.created_at', 'DESC')->get();
@@ -51,7 +62,7 @@ class BarangMasukController extends Controller
     {
         $data = DB::table('barang_masuk')
                 ->leftJoin('stock_barang', 'barang_masuk.material_code', '=', 'stock_barang.material_code')
-                ->select('barang_masuk.id','barang_masuk.material_code','material_name','type','unit','stock_barang','min_stock','storage_location','qty','note','date','barang_masuk.created_by','barang_masuk.created_at')
+                ->select('barang_masuk.id','barang_masuk.material_code','material_name','specification','type','unit','stock_barang','min_stock','storage_location','unit_price','image','qty','note','date','barang_masuk.created_by','barang_masuk.created_at')
                 ->where('barang_masuk.id', $id)
                 ->first();
 
@@ -104,33 +115,48 @@ class BarangMasukController extends Controller
         if ($cekMaterial) {
             $material_code = $cekMaterial->material_code;
         }else{
-            $material_code = 'INVBCK'.$seq;
+            $material_code = 'WHSBCK'.$seq;
         }
 
-        // CREATE HISTORY BARANG MASUK
-        $data                = new BarangMasuk;
-        $data->material_code = $material_code;
-        $data->qty           = $request->input('qty');
-        $data->note          = ($request->input('note') == '') ? null : $request->input('note');
-        $data->date          = $request->input('date');
-        $data->created_by    = LoggedUser::get()['user']->full_name;
-        $data->save();
+        DB::transaction(function() use ($request, $material_code, $cekMaterial){
+            // CREATE HISTORY BARANG MASUK
+            $data                = new BarangMasuk;
+            $data->material_code = $material_code;
+            $data->qty           = $request->input('qty');
+            $data->note          = ($request->input('note') == '') ? null : $request->input('note');
+            $data->date          = $request->input('date');
+            $data->created_by    = LoggedUser::get()['user']->full_name;
+            $data->save();
 
-        // CREATE OR UPDATE STOCK BARANG
-        $data = StockBarang::updateOrCreate([
-            'material_name' => $request->input('material_name'),
-        ],[
-            'material_code'    => $material_code,
-            'material_name'    => $request->input('material_name'),
-            'type'             => $request->input('type'),
-            'unit'             => $request->input('unit'),
-            'stock_barang'     => $request->input('stock_barang'),
-            'min_stock'        => $request->input('min_stock'),
-            'storage_location' => $request->input('storage_location'),
-            'created_by'       => LoggedUser::get()['user']->full_name,
-        ]);
+            // INSERT IMAGE
+            if ($request->hasFile('image')) {
+                $attach    = $request->image;
+                $original  = $attach->getClientOriginalName();
+                $file      = pathinfo($original, PATHINFO_FILENAME);
+                $extension = pathinfo($original, PATHINFO_EXTENSION);
+                $filename  = $file.'_'.\Carbon\Carbon::now()->format('ymd_his').'.'.$extension;
 
-        return Responses::sendResponse($data, 'Barang Masuk Created Successfully');
+                $attach->move(storage_path('image_barang'), $filename );
+            }
+
+            // CREATE OR UPDATE STOCK BARANG
+            $data = StockBarang::updateOrCreate([
+                'material_name' => $request->input('material_name'),
+            ],[
+                'material_code'    => $material_code,
+                'material_name'    => $request->input('material_name'),
+                'specification'    => $request->input('specification'),
+                'type'             => $request->input('type'),
+                'unit'             => $request->input('unit'),
+                'stock_barang'     => $request->input('stock_barang'),
+                'min_stock'        => $request->input('min_stock'),
+                'storage_location' => $request->input('storage_location'),
+                'image'            => (($request->hasFile('image')) ? $filename : $cekMaterial->image),
+                'created_by'       => LoggedUser::get()['user']->full_name,
+            ]);
+
+            return Responses::sendResponse($data, 'Barang Masuk Created Successfully');
+        });
     }
 
     public function update(Request $request, $id)
@@ -140,7 +166,6 @@ class BarangMasukController extends Controller
             'material_name'    => 'required',
             'type'             => 'required',
             'unit'             => 'required',
-            'qty'              => 'required',
             'min_stock'        => 'required',
             'storage_location' => 'required',
             'date'             => 'required',
@@ -150,30 +175,75 @@ class BarangMasukController extends Controller
             return Responses::sendError($validator->errors(), 'Validation Error');
         }
 
-        // CREATE HISTORY BARANG MASUK
-        $data                = BarangMasuk::find($id);
-        $data->material_code = $request->input('material_code');
-        $data->qty           = $request->input('qty');
-        $data->note          = ($request->input('note') == '') ? null : $request->input('note');
-        $data->date          = $request->input('date');
-        $data->created_by    = LoggedUser::get()['user']->full_name;
-        $data->save();
+        DB::transaction(function() use ($request, $id){
 
-        // CREATE OR UPDATE STOCK BARANG
-        $data = StockBarang::updateOrCreate([
-            'material_name' => $request->input('material_name'),
-        ],[
-            'material_code'    => $request->input('material_code'),
-            'material_name'    => $request->input('material_name'),
-            'type'             => $request->input('type'),
-            'unit'             => $request->input('unit'),
-            'stock_barang'     => $request->input('stock_barang'),
-            'min_stock'        => $request->input('min_stock'),
-            'storage_location' => $request->input('storage_location'),
-            'created_by'       => LoggedUser::get()['user']->full_name,
+            // CREATE HISTORY BARANG MASUK
+            $data                = BarangMasuk::find($id);
+            $data->material_code = $request->input('material_code');
+            $data->qty           = $request->input('qty');
+            $data->note          = ($request->input('note') == '') ? null : $request->input('note');
+            $data->date          = $request->input('date');
+            $data->created_by    = LoggedUser::get()['user']->full_name;
+            $data->save();
+
+            // CREATE OR UPDATE STOCK BARANG
+            $oldFilename = StockBarang::where('material_code', $request->input('material_code'))->first();
+            $data = StockBarang::updateOrCreate([
+                'material_name' => $request->input('material_name'),
+            ],[
+                'material_code'    => $request->input('material_code'),
+                'material_name'    => $request->input('material_name'),
+                'specification'    => ($request->input('specification') == '') ? null : $request->input('specification'),
+                'type'             => $request->input('type'),
+                'unit'             => $request->input('unit'),
+                'stock_barang'     => $request->input('stock_barang'),
+                'min_stock'        => $request->input('min_stock'),
+                'storage_location' => $request->input('storage_location'),
+                'image'            => (($request->hasFile('image')) ? $filename : $oldFilename->image),
+                'created_by'       => LoggedUser::get()['user']->full_name,
+            ]);
+
+            return Responses::sendResponse($data, 'Barang Masuk Updated Successfully');
+        });
+    }
+
+    public function duplicate(Request $request)
+    {
+        $validator = validator::make($request->all(), [
+            'material_code'    => 'required',
+            'material_name'    => 'required',
+            'type'             => 'required',
+            'unit'             => 'required',
+            'min_stock'        => 'required',
+            'storage_location' => 'required',
+            'date'             => 'required',
         ]);
 
-        return Responses::sendResponse($data, 'Barang Masuk Updated Successfully');
+        if($validator->fails()){
+            return Responses::sendError($validator->errors(), 'Validation Error');
+        }
+
+        DB::transaction(function() use ($request){
+
+            // CREATE HISTORY BARANG MASUK
+            $data                = new BarangMasuk;
+            $data->material_code = $request->input('material_code');
+            $data->qty           = $request->input('qty');
+            $data->note          = ($request->input('note') == '') ? null : $request->input('note');
+            $data->date          = $request->input('date');
+            $data->created_by    = LoggedUser::get()['user']->full_name;
+            $data->save();
+
+            // CREATE OR UPDATE STOCK BARANG
+            $oldFilename = StockBarang::where('material_code', $request->input('material_code'))->first();
+            $data = StockBarang::updateOrCreate([
+                'material_name' => $request->input('material_name'),
+            ],[
+                'stock_barang'     => $request->input('stock_barang'),
+            ]);
+
+            return Responses::sendResponse($data, 'Barang Masuk Updated Successfully');
+        });
     }
 
     public function destroy($id)
@@ -189,33 +259,5 @@ class BarangMasukController extends Controller
         $data = BarangMasuk::destroy($id);
 
         return Responses::sendResponse($data, 'Barang Masuk Deleted Successfully');
-    }
-
-    public function changePassFoto(Request $request)
-    {     
-        // JIKA ADA FOTO YANG DI RUBAH
-        if ($request->hasFile('foto')) {
-            $attach    = $request->foto;
-            $original  = $attach->getClientOriginalName();
-            $file      = pathinfo($original, PATHINFO_FILENAME);
-            $extension = pathinfo($original, PATHINFO_EXTENSION);
-            $filename  = $file.'.'.$extension;
-
-            $attach->move(storage_path('foto_karyawan'), $filename );
-
-            $data                = BarangMasuk::find($request->id_karyawan);
-            $data->foto_karyawan = $filename;
-            $data->updated_by    = LoggedUser::get()['user']->full_name;
-            $data->save();
-        }
-
-        // JIKA PASSWORD DI RUBAH
-        if (!empty($request->password)) {
-            DB::table('users')->where('employee_id', $request->employee_id)->update([
-                'password' => password_hash($request->password, PASSWORD_BCRYPT),
-            ]);
-        }
-
-        return Responses::sendResponse(null, 'Change Data Successfully');
     }
 }

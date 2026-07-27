@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class StockBarang extends Model
 {
     protected $table = 'stock_barang';
-    protected $fillable = ['id','material_code','material_name','type','unit','stock_barang','min_stock','storage_location','created_by','updated_by'];
+    protected $fillable = ['id','material_code','material_name','specification','type','unit','stock_barang','min_stock','storage_location','unit_price','image','created_by','updated_by'];
 
     public function totalBarangMasuk() 
     {
