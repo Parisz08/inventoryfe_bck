@@ -413,6 +413,7 @@ export default {
       };
       const c = map[status] || { bg: '#e9ecef', color: '#495057' };
       return { backgroundColor: c.bg, color: c.color };
+      
     },
     statusLabel(status) {
       const map = {
