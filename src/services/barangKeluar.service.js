@@ -25,6 +25,13 @@ export default {
             }
         });
     },
+    updateDesc(id, params) {
+        return Service().post('barang-keluar/update-description/'+id, params, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+        });
+    },
     delete(id) {
         return Service().post('barang-keluar/delete/'+id);
     },

@@ -6,7 +6,7 @@
           <div class="col-lg-3 col-md-6 col-12">
             <card
               title="Total Item"
-              :value="totalKaryawan"
+              :value="convertRp(totalItem)"
               iconClass="ni ni-collection"
               iconBackground="bg-gradient-primary"
               directionReverse
@@ -15,7 +15,7 @@
           <div class="col-lg-3 col-md-6 col-12">
             <card
               title="Total Barang"
-              :value="convertRp(totalGajiBulanIni)"
+              :value="convertRp(totalBarang)"
               iconClass="ni ni-folder-17"
               iconBackground="bg-gradient-danger"
               directionReverse
@@ -24,7 +24,7 @@
           <div class="col-lg-3 col-md-6 col-12">
             <card
               title="Total Barang Masuk"
-              :value="convertRp(totalGajiBulanLalu)"
+              :value="convertRp(totalBarangMasuk)"
               iconClass="ni ni-cloud-download-95"
               iconBackground="bg-gradient-success"
               directionReverse
@@ -33,149 +33,186 @@
           <div class="col-lg-3 col-md-6 col-12">
             <card
               title="Total Barang Keluar"
-              :value="totalUsers"
+              :value="convertRp(totalBarangKeluar)"
               iconClass="ni ni-cloud-upload-96"
               iconBackground="bg-gradient-warning"
               directionReverse
             ></card>
           </div>
         </div>
-        <!-- <div class="row">
-          <div class="col-lg-7 mb-lg"> -->
-            <!-- line chart -->
-          <!--   <div class="card z-index-2">
-              <gradient-line-chart />
-            </div>
-          </div>
-          <div class="col-lg-5">
-            <carousel />
-          </div>
-        </div> -->
-        <div class="row mt-4">
-          <div class="col-lg-12 mb-lg-0 mb-4">
-            <div class="card">
-              <div class="row mb-4">
-                <div class="col-4">
-                  <div class="card-header pb-0">
-                    <h6>Employee Hour Performance</h6>
-                  </div>
-                </div>
-                <div class="col-4">
-                </div>
-                <div class="col-4 float-right">
-                  <argon-button
-                    style="margin-right: 10px; margin-left: 60px;"
-                    class="mt-4"
-                    variant="gradient"
-                    color="secondary"
-                    size="sm"
-                    @click="filter()"
-                  ><i class="fa fa-filter fa-sm" aria-hidden="true"></i> Filter</argon-button>
-                  <a class="btn btn-sm btn-warning" style="margin-top: 40px;" :href="apiUrl+'print-pdf/ehp?periode_start='+search.periode_start+'&periode_end='+search.periode_end+'&nama='+search.nama+'&jabatan='+search.jabatan+'&unit='+search.unit+''" target="_BLANK"><i class="fa fa-print fa-sm"></i> Print</a>
-                </div>
-              </div>
-              <div class="table-responsive">
-                <table class="table align-items-center">
-                  <thead>
-                    <tr>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Nama</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">Unit</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">JABATAN</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">JAM KERJA</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">JAM LEMBUR</th>
-                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">TOTAL JAM</th>
-                      <th class="text-secondary"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(row, i) in table.data" :key="i">
-                      <td class="w-30">
-                        <div class="px-2 py-1 d-flex align-items-center">
-                          <!-- <div>
-                            <img src="" />
-                          </div> -->
-                          <div class="ms-4">
-                            <p class="mb-0 text-xs font-weight-bold">{{ row.id_karyawan }}</p>
-                            <h6 class="mb-0 text-sm">{{ row.nama }}</h6>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="text-center">
-                          <h6 class="mb-0 text-sm">{{ row.unit }}</h6>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="text-center">
-                          <h6 class="mb-0 text-sm">{{ row.jabatan }}</h6>
-                        </div>
-                      </td>
-                      <td class="text-sm align-middle">
-                        <div class="text-center col">
-                          <h6 class="mb-0 text-sm">{{ (8 * row.total_kerja_count) }}</h6>
-                        </div>
-                      </td>
-                      <td class="text-sm align-middle">
-                        <div class="text-center col">
-                          <h6 class="mb-0 text-sm">{{ row.total_ot_count }}</h6>
-                        </div>
-                      </td>
-                      <td class="text-sm align-middle">
-                        <div class="text-center col">
-                          <h6 class="mb-0 text-sm">{{ (+(8 * row.total_kerja_count) + +(row.total_ot_count)) }}</h6>
-                        </div>
-                      </td>
-                      <td class="text-secondary"></td>
-                    </tr>
-                  </tbody>
-                </table>
+        
+        <div class="card"> 
+          <div class="row">
+            <div class="col-4">
+              <div class="card-header pb-0">
+                <h6>Stock Barang</h6>
               </div>
             </div>
+            <div class="col-6">
+            </div>
+            <div class="col-2 float-right">
+              <argon-button
+                class="mt-4"
+                variant="gradient"
+                color="secondary"
+                size="sm"
+                @click="filter()"
+              ><i class="fa fa-filter fa-sm" aria-hidden="true"></i> Filter</argon-button>
+            </div>
           </div>
-          <!-- <div class="col-lg-5">
-            <categories-card />
-          </div> -->
+          
+          <div class="card-body px-0 pt-0 pb-2 mt-4">
+            <div class="table-responsive p-0 scroll">
+              <table class="table align-items-center mb-0">
+                <thead>
+                  <tr>
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Image</th>
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Material Code</th>
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Material Name</th>
+                    <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Specification</th> -->
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Type</th>
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Unit</th>
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Actual Stock</th>
+                    <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Stock In</th> -->
+                    <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Stock Out</th> -->
+                    <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Min Stock</th> -->
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Storage Location</th>
+                    <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Unit Price</th> -->
+                    <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Created At</th> -->
+                    <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Created By</th> -->
+                    <!-- <th class="text-secondary"></th> -->
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, i) in table.data" :key="i">
+                    <td class="align-middle text-center text-sm">
+                      <img
+                        :src="storageUrl+'/image_barang/'+row.image"
+                        class="avatar avatar-lg me-1"
+                        alt="user1"
+                      />
+                    </td>
+                    <td class="align-middle text-center text-sm">
+                      <router-link :to="/detail-barang/+row.material_code">
+                        <span class="badge badge-sm bg-gradient-primary">{{ row.material_code }}</span>
+                      </router-link>
+                    </td>
+                    <td class="align-middle text-center">
+                      <span class="text-secondary text-xs font-weight-bold">{{ row.material_name}}</span>
+                    </td>
+                   <!--  <td class="align-middle text-center">
+                      <span class="text-secondary text-xs font-weight-bold">{{ row.specification }}</span>
+                    </td> -->
+                    <td class="align-middle text-center">
+                      <span class="text-secondary text-xs font-weight-bold">{{ row.type}}</span>
+                    </td>
+                    <td class="align-middle text-center">
+                      <span class="text-secondary text-xs font-weight-bold">{{ row.unit}}</span>
+                    </td>
+                    <td class="align-middle text-center">
+                      <span class="badge bg-gradient-success" v-if="row.stock_barang >= row.min_stock">{{ row.stock_barang }}</span>
+                      <span class="badge bg-gradient-danger" v-if="row.stock_barang < row.min_stock">{{ row.stock_barang }}</span>
+                    </td>
+                   <!--  <td class="align-middle text-center">
+                      <span class="text-secondary text-xs font-weight-bold">{{ row.total_barang_masuk_count }}</span>
+                    </td>
+                    <td class="align-middle text-center">
+                      <span class="text-secondary text-xs font-weight-bold">{{ row.total_barang_keluar_count }}</span>
+                    </td> -->
+                    <!-- <td class="align-middle text-center">
+                      <span class="text-secondary text-xs font-weight-bold">{{ row.min_stock }}</span>
+                    </td> -->
+                    <td class="align-middle text-center">
+                      <span class="text-secondary text-xs font-weight-bold">{{ row.storage_location }}</span>
+                    </td>
+                    <!-- <td class="align-middle text-center">
+                      <span class="text-secondary text-xs font-weight-bold">{{ convertRp(row.unit_price) }}</span>
+                    </td>
+                    <td class="align-middle text-center">
+                      <span class="text-secondary text-xs font-weight-bold">{{ moment(row.created_at).locale('id').format('LL') }}</span>
+                    </td>
+                    <td class="align-middle text-center">
+                      <span class="text-secondary text-xs font-weight-bold">{{ row.created_by }}</span>
+                    </td> -->
+                    <!-- <td>
+                      <i class="fas fa-edit fa-sm" aria-hidden="true" style="cursor: pointer; margin-right: 20px;" @click="edit(row.id)" title="Edit"></i>
+                      <i class="fa fa-trash-o fa-sm" aria-hidden="true" title="Hapus" style="cursor: pointer; margin-right: 20px;" @click="remove(row.id)"></i>
+                    </td> -->
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card-footer">
+            <!-- <div>
+              <argon-pagination class="float-right">
+                <argon-pagination-item prev />
+                <argon-pagination-item label="1" active />
+                <argon-pagination-item label="2" disabled />
+                <argon-pagination-item label="3" />
+                <argon-pagination-item next />
+               </argon-pagination>
+            </div> -->
+          </div>
         </div>
 
         <!-- =======  MODAL FILTER ======= -->
-        <div class="container">
-          <vue-final-modal v-model="formFilter.show" classes="modal-container" content-class="modal-content" :z-index="10000">
-            <!-- header -->
-            <div class="row">
-              <div class="col-11 float-left">
-                <span class="modal__title">{{formFilter.title}}</span>
-              </div>
-              <div class="col-1 float-right">
-                <i style="cursor: pointer;" class="fa fa-times" aria-hidden="true" @click="formFilter.show = false"></i>
-              </div>
-            </div><hr>
-            <!-- end header -->
-            <div class="modal__content container">
-              <label for="example-text-input" class="form-control-label mt-3">Periode Start</label>
-              <input type="date" class="form-control" placeholder="Periode Start" v-model="search.periode_start">
-              <label for="example-text-input" class="form-control-label mt-3">Periode End</label>
-              <input type="date" class="form-control" placeholder="Periode End" v-model="search.periode_end">
-              <label for="example-text-input" class="form-control-label mt-3">Nama</label>
-              <input type="text" class="form-control" placeholder="Nama" v-model="search.nama" required>
-              <label for="example-text-input" class="form-control-label mt-3">Jabatan</label>
-              <input type="text" class="form-control" placeholder="Jabatan" v-model="search.jabatan" required>
-              <label for="example-text-input" class="form-control-label mt-3">Unit</label>
-              <input type="text" class="form-control" placeholder="Unit" v-model="search.unit" required>
-            </div>
-            <!-- footer -->
-            <div class="row float-right mt-3">
-              <div class="col-6"> 
-              </div>
-              <div class="col-2" style="margin-right: 20px;">
-                <argon-button  variant="gradient" color="secondary" size="sm" width="1" @click="formFilter.show = true">Close</argon-button>
-              </div>
-              <div class="col-1">
-                <argon-button variant="gradient" color="success" size="sm" width="1" @click="getEhp()">Filter</argon-button>
-              </div>
-            </div>
-            <!-- end footer -->
-          </vue-final-modal>
-         </div>
+  <div class="container">
+    <vue-final-modal v-model="formFilter.show" classes="modal-container" content-class="modal-content" :z-index="10000">
+      <!-- header -->
+      <div class="row">
+        <div class="col-11 float-left">
+          <span class="modal__title">{{formFilter.title}}</span>
+        </div>
+        <div class="col-1 float-right">
+          <i style="cursor: pointer;" class="fa fa-times" aria-hidden="true" @click="formFilter.show = false"></i>
+        </div>
+      </div><hr>
+      <!-- end header -->
+      <div class="modal__content container">
+        <label for="example-text-input" class="form-control-label mt-3">Material Code</label>
+        <input type="text" class="form-control" placeholder="Material Code" v-model="search.material_code">
+        <label for="example-text-input" class="form-control-label mt-3">Material Name</label>
+        <input type="text" class="form-control" placeholder="Material Name" v-model="search.material_name" required>
+        <label for="example-text-input" class="form-control-label mt-3">Type</label>
+        <select class="form-select" aria-label="Default select example" v-model="search.type">
+          <option selected>Select Type</option>
+          <option value="Consumable">Consumable</option>
+          <option value="Sparepart">Sparepart</option>
+          <option value="Tools">Tools</option>
+          <option value="Other">Other</option>
+        </select>
+        <label for="example-text-input" class="form-control-label mt-3">Unit</label>
+        <select class="form-select" aria-label="Default select example" v-model="search.unit">
+          <option selected>Select Unit</option>
+          <option value="Batang">Batang</option>
+          <option value="Kg">Kg</option>
+          <option value="Lembar">Lembar</option>
+          <option value="Liter">Liter</option>
+          <option value="Meter">Meter</option>
+          <option value="M3">M3</option>
+          <option value="Pasang">Pasang</option>
+          <option value="Pcs">Pcs</option>
+          <option value="Roll">Roll</option>
+          <option value="Tabung">Tabung</option>
+        </select>
+        <label for="example-text-input" class="form-control-label mt-3">Storage Location</label>
+        <input type="text" class="form-control" placeholder="Storage Location" v-model="search.storage_location" required>
+      </div>
+      <!-- footer -->
+      <div class="row float-right mt-3">
+        <div class="col-6"> 
+        </div>
+        <div class="col-2" style="margin-right: 20px;">
+          <argon-button  variant="gradient" color="secondary" size="sm" width="1" @click="formFilter.show = true">Close</argon-button>
+        </div>
+        <div class="col-1">
+          <argon-button variant="gradient" color="success" size="sm" width="1" @click="getStock()">Filter</argon-button>
+        </div>
+      </div>
+      <!-- end footer -->
+    </vue-final-modal>
+   </div>
 
       </div>
     </div>
@@ -188,30 +225,45 @@ import ArgonButton from "@/components/ArgonButton.vue";
 import Api from '@/helpers/api';
 import config from '@/configs/config';
 import dashboard from '@/services/dashboard.service';
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
+var moment = require('moment');
+import stockBarang from '@/services/stockBarang.service';
 
 export default {
   name: "dashboard-default",
   data() {
     return {
+      moment:moment,
       table: {
         data: []
       },
-      totalKaryawan: '',
-      totalGajiBulanIni: '',
-      totalGajiBulanLalu: '',
-      totalUsers: '',
+      form: {
+        add: true,
+        title: "Add Data",
+        show: false
+      },
       formFilter: {
         add: true,
         title: "Filter",
         show: false
       },
+      onLoading: false,
+      storageUrl : config.storageUrl,
+      dataBarangMasuk: {},
       search: {
-        periode_start: '',
-        periode_end: '',
-        nama: '',
-        jabatan: '',
+        material_code: '',
+        material_name: '',
+        type: '',
         unit: '',
+        storage_location: '',
+        date: '',
       },
+
+      totalItem: '',
+      totalBarang: '',
+      totalBarangMasuk: '',
+      totalBarangKeluar: '',
       apiUrl :config.apiUrl,
     };
   },
@@ -222,17 +274,17 @@ export default {
   },
   mounted(){
     this.get();
-    this.getEhp();
+    this.getStock();
+    this.tokenApi = 'Bearer '+localStorage.getItem('token');
   },
   methods: {
     get(param){
       let context = this;               
       Api(context, dashboard.index()).onSuccess(function(response) {    
-          context.table.data         = response.data.data.EHP;
-          context.totalKaryawan      = response.data.data.totalKaryawan;
-          context.totalGajiBulanIni  = response.data.data.totalGajiBulanIni;
-          context.totalGajiBulanLalu = response.data.data.totalGajiBulanLalu;
-          context.totalUsers         = response.data.data.totalUsers;
+          context.totalItem         = response.data.data.totalItem;
+          context.totalBarang       = response.data.data.totalBarang;
+          context.totalBarangMasuk  = response.data.data.totalBarangMasuk;
+          context.totalBarangKeluar = response.data.data.totalBarangKeluar;
       }).onError(function(error) {                    
           if (error.response.status == 404) {
               context.table.data = [];
@@ -242,19 +294,39 @@ export default {
       })
       .call()
     },
-    getEhp(param){
+    getStock(param){
       let context = this;               
-      Api(context, dashboard.showEhp({ periode_start: context.search.periode_start, periode_end: context.search.periode_end, nama: context.search.nama, jabatan: context.search.jabatan, unit: context.search.unit})).onSuccess(function(response) {    
-          context.table.data = response.data.data.EHP;
+      Api(context, stockBarang.index({material_code: context.search.material_code, material_name: context.search.material_name, type: context.search.type, unit: context.search.unit, storage_location: context.search.storage_location, date: context.search.date})).onSuccess(function(response) {    
+          context.table.data = response.data.data.data;
+          context.notify('Data Retrieved Successfully', 'success')
       }).onError(function(error) {                    
           if (error.response.status == 404) {
               context.table.data = [];
           }
+          context.notify('Data Retrieved Failed', 'error')
       }).onFinish(function() { 
          context.formFilter.show  = false;
       })
       .call()
     },
+    filter() {
+      this.formFilter.add   = true;
+      this.formFilter.show  = true;
+      this.formFilter.title = "Filter";
+      this.onLoading = false;
+    },
+    notify(message, type) {
+      if (type == 'success') {
+        toast.success(message, {
+          autoClose: 2000,
+        }); // ToastOptions
+      }else{
+        toast.error(message, {
+          autoClose: 2000,
+        }); // ToastOptions
+      }
+    },
+    
     convertRp(bilangan) {
       if (bilangan) {
         var number_string = bilangan.toString(),
@@ -270,12 +342,6 @@ export default {
           return bilangan
         }
       }
-    },
-    filter() {
-      this.formFilter.add   = true;
-      this.formFilter.show  = true;
-      this.formFilter.title = "Filter";
-      this.onLoading = false;
     },
   }
 };

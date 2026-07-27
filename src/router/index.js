@@ -6,16 +6,18 @@ import VirtualReality from "../views/VirtualReality.vue";
 import RTL from "../views/Rtl.vue";
 import Profile from "../views/Profile.vue";
 import Signup from "../views/Signup.vue";
-import Signin from "../views/Signin.vue";
+// import Signin from "../views/Signin.vue";
 import Login from "../views/Login.vue";
 
 // ADMIN
 import BarangMasuk from "../views/admin/BarangMasuk.vue";
 import BarangKeluar from "../views/admin/BarangKeluar.vue";
+import Spb from "../views/Spb.vue";
+import RemaindStock from "../views/admin/RemaindStock.vue";
 import StockBarang from "../views/admin/StockBarang.vue";
+import DetailBarang from "../views/admin/DetailBarang.vue";
 
 
-// import DetailProfile from "../views/admin/DetailProfile.vue";
 // import DetailSlip from "../views/admin/DetailSlip.vue";
 import Account from "../views/admin/Account.vue";
 
@@ -36,17 +38,27 @@ const routes = [
     component: BarangKeluar,
   },
   {
+    path: "/spb",
+    name: "Spb", 
+    component: Spb,
+  },
+  {
+    path: "/remaind-stock",
+    name: "RemaindStock",
+    component: RemaindStock,
+  },
+  {
     path: "/stock-barang",
     name: "StockBarang",
     component: StockBarang,
   },
+  {
+    path: '/detail-barang/:material_code',
+    name: 'DetailBarang',
+    component: DetailBarang
+  },
 
 
-  // {
-  //   path: '/detail-profile/:id_karyawan',
-  //   name: 'DetailProfile',
-  //   component: DetailProfile
-  // },
   // {
   //   path: '/detail-slip/:id_karyawan/:periode_start/:periode_end',
   //   name: 'DetailSlip',
@@ -93,11 +105,11 @@ const routes = [
     name: "Profile",
     component: Profile,
   },
-  {
-    path: "/signin",
-    name: "Signin",
-    component: Signin,
-  },
+  // {
+  //   path: "/signin",
+  //   name: "Signin",
+  //   component: Signin,
+  // },
   
   
 ];
@@ -109,7 +121,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const publicPages = ['Login','Signin'];
+  const publicPages = ['Login','DetailBarang'];
   const authRequired = !publicPages.includes(to.name);
   const authenticated = JSON.parse(localStorage.getItem('authenticated'));  
 

@@ -1,9 +1,9 @@
 const config = {
-	apiUrl: ' http://localhost/inventorybe_bck/public/',
-    storageUrl: ' http://localhost/inventorybe_bck/storage/',
+	apiUrl: ' http://localhost:8000/',
+    storageUrl: ' https://inventorybe.bck.co.id/storage/',
     
-    // apiUrl: 'https://digajiinbe.bck.co.id/public/',
-    // storageUrl: 'https://digajiinbe.bck.co.id/storage/',
+    // apiUrl: 'https://inventorybe.bck.co.id/public/',
+    // storageUrl: 'https://inventorybe.bck.co.id/storage/',
 }
 
 export default config

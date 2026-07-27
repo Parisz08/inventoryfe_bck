@@ -27,5 +27,5 @@ module.exports = {
   // },
   // publicPath: '/',
   // // assetsDir: 'assets',
-  outputDir: 'C:/xampp/htdocs/digajiin_fe_build'
+  outputDir: 'C:/xampp/htdocs/inventory_bck_build'
 };

@@ -180,7 +180,7 @@
           <li class="nav-item d-flex align-items-center text-white">
             <!-- <i class="fa fa-user" ></i> -->
             <span class="d-sm-inline d-none ms-sm-2 me-sm-2">Hallo {{ full_name }}</span>
-            <i class="fa fa-sign-out" @click="logout()" style="cursor: pointer;" title="Logout"></i>
+            <i class="fas fa-sign-out-alt ms-2" @click="logout()" style="cursor: pointer; font-size: 1.1rem;" title="Logout"></i>
           </li>
         </ul>
       </div>

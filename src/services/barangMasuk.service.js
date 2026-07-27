@@ -25,6 +25,13 @@ export default {
             }
         });
     },
+    duplicate(params) {
+        return Service().post('barang-masuk/duplicate', params, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+        });
+    },
     delete(id) {
         return Service().post('barang-masuk/delete/'+id);
     },

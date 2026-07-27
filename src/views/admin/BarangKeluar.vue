@@ -1,8 +1,8 @@
 <template>
   <div class="py-4 container-fluid">
-    <a class="btn btn-sm btn-primary" style="margin-right: 10px;" :href="apiUrl+'export-excel/karyawan?id_karyawan='+search.id_karyawan+'&nama='+search.nama+'&nik='+search.nik+'&jabatan='+search.jabatan+'&unit='+search.unit+'&status='+search.status+''" target="_BLANK"><i class="fa fa-download fa-sm"></i> Export</a>
+    <a class="btn btn-sm btn-primary" style="margin-right: 10px;" :href="apiUrl+'export-excel/barang-keluar?no_sj='+search.no_sj+'&material_code='+search.material_code+'&material_name='+search.material_name+'&type='+search.type+'&unit='+search.unit+'&description='+search.description+'&divisi='+search.divisi+'&date='+search.date+''" target="_BLANK"><i class="fa fa-download fa-sm"></i> Export</a>
     <!-- <argon-button color="info" size="sm" class="mb-3" variant="gradient" style="margin-right: 10px;"><i class="fa fa-download fa-sm"></i> Export</argon-button> -->
-    <argon-button color="warning" size="sm" class="mb-3" variant="gradient" @click="modalImport()"><i class="fa fa-upload fa-sm"></i> Import</argon-button>
+    <!-- <argon-button color="warning" size="sm" class="mb-3" variant="gradient" @click="modalImport()"><i class="fa fa-upload fa-sm"></i> Import</argon-button> -->
     <div class=" row">
       <div class="col-12">
           <div class="card"> 
@@ -29,6 +29,7 @@
                   color="success"
                   size="sm"
                   @click="create()"
+                  v-if="role == 'Admin'"
                 ><i class="fa fa-plus fa-sm" aria-hidden="true"></i> Add New</argon-button>
               </div>
             </div>
@@ -38,9 +39,12 @@
                 <table class="table align-items-center mb-0">
                   <thead>
                     <tr>
+                      <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">No</th> -->
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">No Barang Keluar</th>
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Material Code</th>
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Material Name</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Type</th>
+                      <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Unit</th> -->
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Qty</th>
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Description</th>
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Divisi</th>
@@ -49,20 +53,31 @@
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Di Terima</th>
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Date</th>
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder ">Created By</th>
-                      <th class="text-secondary"></th>
+                      <th class="text-secondary" v-if="role == 'Admin'"></th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-for="(row, i) in table.data" :key="i">
+                      <!-- <td class="align-middle text-center text-sm">
+                        <span class="text-secondary text-xs font-weight-bold">{{ i + 1}}</span>
+                      </td> -->
                       <td class="align-middle text-center text-sm">
                         <span class="badge badge-sm bg-gradient-info" style="cursor: pointer;" @click="create(), dataSuratPengambilan.no_sj = row.no_sj, getMaterial()">{{ row.no_sj }}</span>
                       </td>
                       <td class="align-middle text-center text-sm">
-                        <span class="badge badge-sm bg-gradient-success">{{ row.material_code }}</span>
+                        <router-link :to="/detail-barang/+row.material_code">
+                          <span class="badge badge-sm bg-gradient-primary">{{ row.material_code }}</span>
+                        </router-link>
                       </td>
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ row.material_name }}</span>
                       </td>
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs font-weight-bold">{{ row.type }}</span>
+                      </td>
+                      <!-- <td class="align-middle text-center">
+                        <span class="text-secondary text-xs font-weight-bold">{{ row.unit }}</span>
+                      </td> -->
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ row.qty}}</span>
                       </td>
@@ -87,8 +102,8 @@
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ row.created_by }}</span>
                       </td>
-                      <td>
-                        <i class="fas fa-edit fa-sm" aria-hidden="true" style="cursor: pointer; margin-right: 20px;" @click="edit(row.id)" title="Edit"></i>
+                      <td v-if="role == 'Admin'">
+                        <!-- <i class="fas fa-edit fa-sm" aria-hidden="true" style="cursor: pointer; margin-right: 20px;" @click="edit(row.id)" title="Edit"></i> -->
                         <i class="fa fa-trash-o fa-sm" aria-hidden="true" title="Hapus" style="cursor: pointer; margin-right: 20px;" @click="remove(row.id)"></i>
                       </td>
                     </tr>
@@ -128,7 +143,7 @@
       <div class="modal__content container">
         <h5 class="text-center font-weight-bold mb-3" style="margin-top: 0px;">Surat Pengambilan Barang</h5>
         <div class="float-end">
-          <a style="margin-top: -40px;" class="btn btn-xs btn-warning d-none d-md-block" :href="apiUrl+'print-pdf/spl?code_spl='" target="_BLANK"><i class="fa fa-print fa-sm"></i> Print</a>
+          <a style="margin-top: -40px;" class="btn btn-xs btn-warning d-none d-md-block" :href="apiUrl+'print-pdf/surat-barang-keluar?no_sj='+dataSuratPengambilan.no_sj+''" target="_BLANK"><i class="fa fa-print fa-sm"></i> Print</a>
         </div><hr>
         <div class="row mt-4">
           <div class="col">
@@ -136,15 +151,21 @@
             <div class="row">
               <div class="col-6">
                 <p style="margin-top: 0px;">
-                  No Pengambilan &ensp;: <input style="border: 1px solid white;" v-model="dataSuratPengambilan.no_sj" size="15" @keyup="getMaterial()"><br>
-                  Tanggal &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;: <input type="date" style="border: 1px solid white;" v-model="dataSuratPengambilan.date" size="2">
+                  No Pengambilan &ensp;: <input style="border: 1px solid white;" v-model="dataSuratPengambilan.no_sj" size="15" @keyup="getMaterial()" :disabled="tableMaterial.data.length !== 0"><br>
+                  Tanggal &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;: <input type="date" style="border: 1px solid white;" v-model="dataSuratPengambilan.date" size="2" :disabled="tableMaterial.data.length !== 0">
                 </p>
               </div>
               <div class="col-6">
                 <p>Divisi &ensp;: &ensp;&ensp;
-                  <input type="checkbox" style="border: 1px solid white;"> Pipa &ensp;&ensp;&ensp;&ensp;&ensp; &ensp;<input type="checkbox" style="border: 1px solid white;"> Slitting<br>
-                  &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<input type="checkbox" style="border: 1px solid white;"> Shearing &ensp;&ensp;<input type="checkbox" style="border: 1px solid white;"> Maintenance
+                  <select class="form-select" aria-label="Default select example" v-model="dataSuratPengambilan.divisi" :disabled="tableMaterial.data.length !== 0">
+                    <option selected>Select Divisi</option>
+                    <option value="Pipa">Pipa</option>
+                    <option value="Slitting">Slitting</option>
+                    <option value="Shearing">Shearing</option>
+                    <option value="Maintenance">Maintenance</option>
+                  </select>
                 </p>
+
               </div>
             </div><hr>
             <!-- ============== TEBEL MATERIAL ITEM ============== -->
@@ -172,16 +193,20 @@
                       <span class="text-secondary text-xs font-weight-bold"> {{ row.material_name }} </span>
                     </td>
                     <td class="align-middle text-center">
-                      <span class="text-secondary text-xs font-weight-bold"> {{ row.qty }} </span>
+                      <span class="text-secondary text-xs font-weight-bold"> 
+                        <input type="number" style="border: 1px solid white; text-align: center;" size="1" min="1" :value="row.qty" @change="updateQtyMaterial(row.id)" > 
+                      </span>
                     </td>
                     <td class="align-middle text-center">
                       <span class="text-secondary text-xs font-weight-bold"> {{ row.unit }} </span>
                     </td>
                     <td class="align-middle text-center">
-                      <span class="text-secondary text-xs font-weight-bold"> {{ row.description }} </span>
+                      <span class="text-secondary text-xs font-weight-bold">
+                        <input type="text" style="border: 1px solid white; text-align: center;" size="50" :value="row.description" @change="updateDescMaterial(row.id)" >
+                      </span>
                     </td>
                     <td style="text-align: center;">
-                      <i class="fa fa-times-circle fa-lg" aria-hidden="true" title="Delete" style="cursor: pointer;" @click="removeAnggota(row.id)"></i>
+                      <i class="fa fa-times-circle fa-lg" aria-hidden="true" title="Delete" style="cursor: pointer;" @click="remove(row.id)"></i>
                     </td>
                   </tr>
                 </tbody>
@@ -194,17 +219,17 @@
             <div class="row mt-5">
               <div class="col-4">
                 <p style="margin-bottom: 50px; text-align: center;">Diserahkan Oleh</p>
-                <p style="text-align: center;"><input style="border: 1px solid white; text-align: center; border-bottom: 1px solid black;" v-model="dataSuratPengambilan.diserahkan"></p>
+                <p style="text-align: center;"><input style="border: 1px solid white; text-align: center; border-bottom: 1px solid black;" v-model="dataSuratPengambilan.diserahkan" :disabled="tableMaterial.data.length !== 0"></p>
                 <p style="margin-top: -15px; text-align: center;">Bg. Gudang</p>
               </div>
               <div class="col-4">
                 <p style="margin-bottom: 50px; text-align: center;">Disetujui Oleh</p>
-                <p style="text-align: center;"><input style="border: 1px solid white; text-align: center; border-bottom: 1px solid black;" v-model="dataSuratPengambilan.disetujui"></p>
+                <p style="text-align: center;"><input style="border: 1px solid white; text-align: center; border-bottom: 1px solid black;" v-model="dataSuratPengambilan.disetujui" :disabled="tableMaterial.data.length !== 0"></p>
                 <p style="margin-top: -15px; text-align: center;">User</p>
               </div>
               <div class="col-4">
                 <p style="margin-bottom: 50px; text-align: center;">Diterima Oleh</p>
-                <p style="text-align: center;"><input style="border: 1px solid white; text-align: center; border-bottom: 1px solid black;" v-model="dataSuratPengambilan.diterima"></p>
+                <p style="text-align: center;"><input style="border: 1px solid white; text-align: center; border-bottom: 1px solid black;" v-model="dataSuratPengambilan.diterima" :disabled="tableMaterial.data.length !== 0"></p>
                 <p style="margin-top: -15px; text-align: center;">Penerima Barang</p>
               </div>
             </div>
@@ -298,18 +323,32 @@
       </div><hr>
       <!-- end header -->
       <div class="modal__content container">
-        <label for="example-text-input" class="form-control-label mt-3">ID Karyawan</label>
-        <input type="text" class="form-control" placeholder="ID Karyawan" v-model="search.id_karyawan">
-        <label for="example-text-input" class="form-control-label mt-3">Nama</label>
-        <input type="text" class="form-control" placeholder="Nama" v-model="search.nama" required>
-        <label for="example-text-input" class="form-control-label mt-3">NIK</label>
-        <input type="text" class="form-control" placeholder="NIK" v-model="search.nik">
-        <label for="example-text-input" class="form-control-label mt-3">Jabatan</label>
-        <input type="text" class="form-control" placeholder="Jabatan" v-model="search.jabatan" required>
-        <label for="example-text-input" class="form-control-label mt-3">Unit</label>
-        <input type="text" class="form-control" placeholder="Unit" v-model="search.unit" required>
-        <label for="example-text-input" class="form-control-label mt-3">Status</label>
-        <input type="text" class="form-control" placeholder="Status" v-model="search.status" required>
+        <label for="example-text-input" class="form-control-label mt-3">No Barang Keluar</label>
+        <input type="text" class="form-control" placeholder="No Barang Keluar" v-model="search.no_sj">
+        <label for="example-text-input" class="form-control-label mt-3">Material Code</label>
+        <input type="text" class="form-control" placeholder="Material Code" v-model="search.material_code" required>
+        <label for="example-text-input" class="form-control-label mt-3">Material Name</label>
+        <input type="text" class="form-control" placeholder="Material Name" v-model="search.material_name">
+        <label for="example-text-input" class="form-control-label mt-3">Type</label>
+        <select class="form-select" aria-label="Default select example" v-model="search.type">
+          <option selected>Select Type</option>
+          <option value="Consumable">Consumable</option>
+          <option value="Sparepart">Sparepart</option>
+          <option value="Tools">Tools</option>
+          <option value="Other">Other</option>
+        </select>
+        <label for="example-text-input" class="form-control-label mt-3">Description</label>
+        <input type="text" class="form-control" placeholder="Description" v-model="search.description" required>
+        <label for="example-text-input" class="form-control-label mt-3">Divisi</label>
+        <select class="form-select" aria-label="Default select example" v-model="search.divisi">
+          <option selected>Select Divisi</option>
+          <option value="Pipa">Pipa</option>
+          <option value="Slitting">Slitting</option>
+          <option value="Shearing">Shearing</option>
+          <option value="Maintenance">Maintenance</option>
+        </select>
+        <label for="example-text-input" class="form-control-label mt-3">Date Range</label>
+        <flat-pickr :config="{ mode: 'range',}" class="form-control" v-model="search.date"/>
       </div>
       <!-- footer -->
       <div class="row float-right mt-3">
@@ -326,68 +365,6 @@
     </vue-final-modal>
    </div>
 
-  <!-- =======  MODAL IMPORT ======= -->
-  <div class="container">
-    <vue-final-modal v-model="formImport.show" classes="modal-container" content-class="modal-content" :z-index="10000">
-    <!-- header -->
-    <div class="row">
-      <div class="col-11 float-left">
-        <span class="modal__title">{{formImport.title}}</span>
-      </div>
-      <div class="col-1 float-right">
-        <i style="cursor: pointer;" class="fa fa-times" aria-hidden="true" @click="formImport.show = false"></i>
-      </div>
-    </div><hr>
-    <!-- end header -->
-    <div class="modal__content container">
-      <div>
-        <label for="example-text-input" class="form-control-label mt-3">Upload File <span style="color: red;">*</span></label>
-        <input type="file" class="form-control" placeholder="Upload File" @change="filesChange" style="margin-bottom: 20px;">
-        <small>Download Template<a :href="storageUrl+'/template_import/Template Import Data Karyawan.xlsx'" style="color: blue;"> Import Data Karyawan</a></small>
-        <div class="mt-2" v-if="tabelError.data.length !== 0 ">
-          <table>
-            <thead>
-              <slot name="columns">
-                <tr style="background-color: #F0F8FF;">
-                  <th style="font-size: 13px; text-align: center;">Column</th>
-                  <th style="font-size: 13px; text-align: center;">Error</th>
-                  <th style="font-size: 13px; text-align: center;">Row</th>
-                  <th style="font-size: 13px; text-align: center;">Values</th>
-                </tr>
-              </slot>
-            </thead>
-            <tbody>
-              <tr v-for="(row, i) in tabelError.data" :key="i">
-                <td style="font-size: 13px; text-align: center;">{{ row.attribute }}</td>
-                <td style="font-size: 13px; text-align: center;">{{ row.errors }}</td>
-                <td style="font-size: 13px; text-align: center;">{{ row.row }}</td>
-                <td style="font-size: 13px; text-align: center;">{{ row.values }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <!-- footer -->
-    <div class="row float-right mt-5">
-      <div class="col-6"> 
-      </div>
-      <div class="col-2" style="margin-right: 20px;">
-        <argon-button  variant="gradient" color="secondary" size="sm" width="1" @click="formImport.show = false">Close</argon-button>
-      </div>
-      <div class="col-1">
-        <button type="primary" class="btn btn-sm btn-info btn-fill" @click="importData()" :disabled="onLoading">
-          <span v-if="onLoading"><i class="fa fa-spinner fa-spin"></i> Please Wait...</span>
-          <span v-else>
-              <span>Import</span>
-          </span>
-        </button>
-        <!-- <argon-button variant="gradient" color="success" size="sm" width="1" @click="get(), formImport.show = false">Import</argon-button> -->
-      </div>
-    </div>
-    <!-- end footer -->
-    </vue-final-modal>
-  </div>
 </template>
 
 <script>
@@ -400,13 +377,17 @@ import config from '@/configs/config';
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 import barangKeluar from '@/services/barangKeluar.service';
+import akun from '@/services/akun.service';
 var moment = require('moment');
+import flatPickr from 'vue-flatpickr-component';
+import 'flatpickr/dist/flatpickr.css';
 
 export default {
   name: "tables",
   components: {
     ArgonButton,
     VueFinalModal,
+    flatPickr,
     // ArgonPagination,
     // ArgonPaginationItem,
   },
@@ -419,11 +400,6 @@ export default {
       form: {
         add: true,
         title: "Add Data",
-        show: false
-      },
-      formImport: {
-        add: true,
-        title: "Import Data Karyawan",
         show: false
       },
       formFilter: {
@@ -442,18 +418,16 @@ export default {
       tableMaterial: {
         data: []
       },
-      dataImport: '',
       onLoading: false,
-      tabelError: {
-        data: []
-      },
       storageUrl : config.storageUrl,
       dataBarangMasuk: {},
       dataSuratPengambilan: {},
       search: {
         no_sj: '',
+        material_name: '',
         material_code: '',
-        qty: '',
+        type: '',
+        unit: '',
         description: '',
         divisi: '',
         diserahkan: '',
@@ -463,16 +437,19 @@ export default {
       },
       searchMaterial: '',
       apiUrl :config.apiUrl,
+      checkedNames: '',
+      role: '',
     };
   },
   mounted(){
     this.get();
     this.tokenApi = 'Bearer '+localStorage.getItem('token');
+    this.getRole();
   },
   methods: {
     get(param){
       let context = this;               
-      Api(context, barangKeluar.index({no_sj: context.search.no_sj, material_code: context.search.material_code, qty: context.search.qty, description: context.search.description, divisi: context.search.divisi, diserahkan: context.search.diserahkan, disetujui: context.search.disetujui, diterima: context.search.diterima, date: context.search.date})).onSuccess(function(response) {    
+      Api(context, barangKeluar.index({no_sj: context.search.no_sj, material_code: context.search.material_code, material_name: context.search.material_name, type: context.search.type, unit: context.search.unit, description: context.search.description, divisi: context.search.divisi, diserahkan: context.search.diserahkan, disetujui: context.search.disetujui, diterima: context.search.diterima, date: context.search.date})).onSuccess(function(response) {    
           context.table.data = response.data.data.data;
           context.notify('Data Retrieved Successfully', 'success')
       }).onError(function(error) {                    
@@ -485,6 +462,15 @@ export default {
       })
       .call()
     },
+    getRole(){
+      let context = this;     
+      context.onLoading = true;
+      Api(context, akun.indexProfile()).onSuccess(function(response) {
+          context.role = response.data.data[0].role;
+      }).onError(function(error) {  
+      })
+      .call() 
+    },
     filter() {
       this.formFilter.add   = true;
       this.formFilter.show  = true;
@@ -495,7 +481,9 @@ export default {
       this.form.add   = true;
       this.form.show  = true;
       this.form.title = "Add Data";
-      this.dataBarangMasuk   = {};
+      this.dataSuratPengambilan  = {}
+      this.dataSuratPengambilan.diserahkan  = 'Randy Wahyudi'
+      this.tableMaterial.data    = []
 
       if (this.dataSuratPengambilan.no_sj == undefined) {
         this.generateSJNo();
@@ -508,36 +496,32 @@ export default {
       this.formAddMaterial.title = "Add Material";
     },
     addMaterial(id){
-      alert(id)
       let api      = null;
       let context  = this;
       let formData = new FormData();
       this.onLoading = true;
 
-      if (context.dataSuratPengambilan.no_sj != undefined && context.dataSuratPengambilan.date != undefined && context.dataSuratPengambilan.diserahkan != undefined && context.dataSuratPengambilan.disetujui != undefined && context.dataSuratPengambilan.diterima != undefined) {
+      if (context.dataSuratPengambilan.no_sj != undefined && context.dataSuratPengambilan.date != undefined && context.dataSuratPengambilan.divisi != undefined && context.dataSuratPengambilan.diserahkan != undefined && context.dataSuratPengambilan.disetujui != undefined && context.dataSuratPengambilan.diterima != undefined) {
         formData.append('id', id);
         formData.append('no_sj', context.dataSuratPengambilan.no_sj);
-        formData.append('divisi', 'Slitting');
+        formData.append('divisi', context.dataSuratPengambilan.divisi);
         formData.append('date', context.dataSuratPengambilan.date);
         formData.append('diserahkan', context.dataSuratPengambilan.diserahkan);
         formData.append('disetujui', context.dataSuratPengambilan.disetujui);
         formData.append('diterima', context.dataSuratPengambilan.diterima);
       }else{
         context.onLoading = false;
-        return alert('Field Bintang Merah Wajib Di Isi')
+        return alert('Divisi, Diserahkan, Disetujui & Diterima  Wajib Di Isi')
       }
 
       api = Api(context, barangKeluar.create(formData));
 
-      // eslint-disable-next-line no-unused-vars
       api.onSuccess(function(response) {
-        context.getDataCuti();
         context.notify((context.formSPL === 'Add Material') ? 'Data Berhasil di Simpan' : 'Data Berhasil di Update', 'success')
-      // eslint-disable-next-line no-unused-vars
       }).onError(function(error) { 
         context.notify((context.formSPL != 'Add Material') ? 'Data Gagal di Simpan' : 'Data Gagal di Update', 'error')                   
       }).onFinish(function() {
-        context.onLoading = false;
+        context.getMaterial();
         context.get()
       })
       .call();
@@ -545,7 +529,7 @@ export default {
     getMaterial(){
       let context = this;               
       Api(context, barangKeluar.getMaterial({no_sj : context.dataSuratPengambilan.no_sj})).onSuccess(function(response) {   
-          context.tableMaterial.data = response.data.data;
+          context.tableMaterial.data              = response.data.data;
           context.dataSuratPengambilan.date       = response.data.data[0].date;
           context.dataSuratPengambilan.divisi     = response.data.data[0].divisi;
           context.dataSuratPengambilan.diserahkan = response.data.data[0].diserahkan;
@@ -571,92 +555,66 @@ export default {
       })
       .call()        
     },
-    // save(){
-    //   let api      = null;
-    //   let context  = this;
-    //   let formData = new FormData();
+    updateQtyMaterial(id){
+      let api      = null;
+      let context  = this;
+      let formData = new FormData();
+      let qty      = event.target.value
 
-    //   if (context.dataBarangMasuk.material_name != undefined && context.dataBarangMasuk.type != undefined && context.dataBarangMasuk.unit != undefined && context.dataBarangMasuk.qty != undefined && context.dataBarangMasuk.min_stock != undefined && context.dataBarangMasuk.storage_location != undefined && context.dataBarangMasuk.date != undefined) {
-    //     formData.append('material_code', context.dataBarangMasuk.material_code);
-    //     formData.append('material_name', context.dataBarangMasuk.material_name);
-    //     formData.append('type', context.dataBarangMasuk.type);
-    //     formData.append('unit', context.dataBarangMasuk.unit);
-    //     formData.append('qty', context.dataBarangMasuk.qty);
-    //     if (context.form.title == 'Add Data') {
-    //       formData.append('stock_barang', (context.dataBarangMasuk.qty + ((context.dataBarangMasuk.stock_barang == undefined) ? 0 : context.dataBarangMasuk.stock_barang) ));
-    //     }else{
-    //       formData.append('stock_barang', ((context.dataBarangMasuk.stock_barang - context.dataBarangMasuk.qty_old) + context.dataBarangMasuk.qty) );
-    //     }
-    //     formData.append('min_stock', context.dataBarangMasuk.min_stock);
-    //     formData.append('storage_location', context.dataBarangMasuk.storage_location);
-    //     formData.append('note', (this.dataBarangMasuk.note == undefined) ? '' : this.dataBarangMasuk.note);
-    //     formData.append('date', context.dataBarangMasuk.date);
-    //   }else{
-    //     return alert('Field Bintang Merah Wajib Di Isi')
-    //   }
+      if (id != undefined && qty != undefined) {
+        formData.append('qty', qty);
+      }else{
+        return alert('Field Bintang Merah Wajib Di Isi')
+      }
 
-    //   if (context.form.title == 'Add Data') {
-    //       api = Api(context, barangKeluar.create(formData));
-    //   } else {
-    //       api = Api(context, barangKeluar.update(this.dataBarangMasuk.id, formData));
-    //   }
-    //   // eslint-disable-next-line no-unused-vars
-    //   api.onSuccess(function(response) {
-    //     context.get();
-    //     context.form.show = false;
-    //     context.notify((context.form === 'Add Data') ? 'Data Berhasil di Simpan' : 'Data Berhasil di Update', 'success')
-    //   // eslint-disable-next-line no-unused-vars
-    //   }).onError(function(error) { 
-    //     context.notify((context.form != 'Add Data') ? 'Data Gagal di Simpan' : 'Data Gagal di Update', 'error')                   
-    //   }).onFinish(function() {  
-    //   })
-    //   .call();
-    // },
+      api = Api(context, barangKeluar.update(id, formData));
+
+      api.onSuccess(function(response) {
+        context.notify((context.form === 'Add Data') ? 'Data Berhasil di Simpan' : 'Data Berhasil di Update', 'success')
+      }).onError(function(error) { 
+        context.notify((context.form != 'Add Data') ? 'Data Gagal di Simpan' : 'Data Gagal di Update', 'error')                   
+      }).onFinish(function() {  
+        context.getMaterial();
+        context.get();
+      })
+      .call();
+    },
+    updateDescMaterial(id){
+      let api         = null;
+      let context     = this;
+      let formData    = new FormData();
+      let description = event.target.value
+
+      if (id != undefined && description != undefined) {
+        formData.append('description', description);
+      }else{
+        return alert('Field Bintang Merah Wajib Di Isi')
+      }
+
+      api = Api(context, barangKeluar.updateDesc(id, formData));
+
+      api.onSuccess(function(response) {
+        context.notify((context.form === 'Add Data') ? 'Data Berhasil di Simpan' : 'Data Berhasil di Update', 'success')
+      }).onError(function(error) { 
+        context.notify((context.form != 'Add Data') ? 'Data Gagal di Simpan' : 'Data Gagal di Update', 'error')                   
+      }).onFinish(function() {  
+        context.getMaterial();
+        context.get();
+      })
+      .call();
+    },
     remove(id) {
       var r = confirm("Anda yakin ingin menghapus data ini ?");
       if (r == true) {
         let context = this;
 
         Api(context, barangKeluar.delete(id)).onSuccess(function(response) {
-            context.get();
+            context.getMaterial();
+            context.get()
             context.notify('Data Successfully Deleted', 'success')
         }).call();
       }
     },
-    // modalImport(){
-    //   this.formImport.show  = true;
-    //   this.formImport.title = "Import Data Karyawan";
-    //   this.tabelError.data  = [];
-    // },
-    // filesChange(e) {
-    //     this.dataImport = e.target.files[0];
-    // },
-    // importData(){
-    //   let api = null;
-    //   let context = this;
-    //   let formData = new FormData();
-    //   this.onLoading = true;
-
-    //   if (this.dataImport != undefined) {
-    //     formData.append('import_data', this.dataImport);
-    //   }else{
-    //     return alert('File Import Not Found')
-    //   }
-
-    //   api = Api(context, barangKeluar.import(formData));
-    //   api.onSuccess(function(response) {
-    //       context.onLoading = false;
-    //       context.get();
-    //       context.formImport.show = false;
-    //       context.notify('Import Data Success', 'success')
-    //   }).onError(function(error) {      
-    //       context.tabelError.data = error.response.data.data;              
-    //       context.notify('Import Data Failed', 'error')
-    //       context.onLoading = false;
-    //   }).onFinish(function() {  
-    //   })
-    //   .call();
-    // },
     generateSJNo(){
       // GENERATE RANDOM STRING
       let length = 8;
