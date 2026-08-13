@@ -2,11 +2,14 @@
   <div class="py-4 container-fluid">
     <div class="row">
       <div class="col-12">
-        <div class="card">
+        <div class="card sppb-list-card">
           <div class="card-header pb-0 d-flex flex-wrap justify-content-between align-items-center" style="gap: 12px;">
-            <h6 class="mb-0">Data SPPB (Surat Permohonan Permintaan Barang)</h6>
+            <div>
+              <h6 class="mb-0">Data SPPB</h6>
+              <p class="text-secondary text-sm mb-0">Surat Permohonan Permintaan Barang</p>
+            </div>
             <div class="d-flex align-items-center" style="gap: 10px;">
-              <select class="form-select" style="width: 200px;" v-model="search.status" @change="get()">
+              <select class="form-select" style="width: 220px;" v-model="search.status" @change="get()">
                 <option value="">Semua Status</option>
                 <option>Menunggu Approval</option>
                 <option>Ditolak</option>
@@ -36,7 +39,7 @@
                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Status</th>
                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Tanggal</th>
                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Dibuat Oleh</th>
-                    <th class="text-secondary"></th>
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -84,7 +87,7 @@
     <div class="modal__content container">
       <div class="row">
         <div class="col-6">
-          <p>Divisi:
+          <p>Divisi: <span class="text-danger">*</span>
             <select class="form-select" v-model="newSpb.divisi">
               <option value="">Pilih Divisi</option>
               <option value="Pipa">Pipa</option>
@@ -103,13 +106,15 @@
           <thead>
             <tr style="background-color: #F0F8FF;">
               <th class="text-center text-xxs">Kode Material</th>
-              <th class="text-center text-xxs">Nama Barang</th>
-              <th class="text-center text-xxs">Kategori</th>
-              <th class="text-center text-xxs">Spesifikasi</th>
-              <th class="text-center text-xxs">Merek</th>
-              <th class="text-center text-xxs">Qty</th>
-              <th class="text-center text-xxs">Satuan</th>
-              <th class="text-center text-xxs">Keterangan</th>
+              <th class="text-center text-xxs">Nama Barang <span class="text-danger">*</span></th>
+              <th class="text-center text-xxs">Kategori <span class="text-danger">*</span></th>
+              <th class="text-center text-xxs">Spesifikasi <span class="text-danger">*</span></th>
+              <th class="text-center text-xxs">Stok Aktual</th>
+              <th class="text-center text-xxs">Stok Minimum</th>
+              <th class="text-center text-xxs">Merek <span class="text-danger">*</span></th>
+              <th class="text-center text-xxs">Qty <span class="text-danger">*</span></th>
+              <th class="text-center text-xxs">Satuan <span class="text-danger">*</span></th>
+              <th class="text-center text-xxs">Keterangan <span class="text-danger">*</span></th>
               <th></th>
             </tr>
           </thead>
@@ -127,10 +132,16 @@
                   <option v-for="(label, code) in kategoriList" :key="code" :value="code">{{ code }}</option>
                 </select>
               </td>
-              <td><input class="form-control form-control-sm" v-model="item.specification" :readonly="!!item.material_code"></td>
+              <td><input class="form-control form-control-sm" v-model="item.specification"></td>
+              <td>
+                <input type="number" min="0" class="form-control form-control-sm" v-model="item.actual_stock" placeholder="otomatis">
+              </td>
+              <td>
+                <input type="number" min="0" class="form-control form-control-sm" v-model="item.min_stock" placeholder="otomatis">
+              </td>
               <td><input class="form-control form-control-sm" v-model="item.merek"></td>
               <td><input type="number" min="1" class="form-control form-control-sm" v-model="item.qty"></td>
-              <td><input class="form-control form-control-sm" v-model="item.unit" :readonly="!!item.material_code"></td>
+              <td><input class="form-control form-control-sm" v-model="item.unit"></td>
               <td><input class="form-control form-control-sm" v-model="item.note"></td>
               <td><i class="fa fa-times-circle" style="cursor:pointer;" @click="newSpb.items.splice(idx,1)"></i></td>
             </tr>
@@ -168,57 +179,115 @@
   <!-- ============ MODAL DETAIL & PROSES SPPB ============ -->
   <vue-final-modal v-model="formDetail.show" classes="modal-container" content-class="modal-content-width" :z-index="10000">
     <div class="row">
-      <div class="col-11 float-left"><span class="modal__title">Detail SPPB {{ detail.no_spb }}</span></div>
+      <div class="col-8 float-left"><span class="modal__title">Detail SPPB {{ detail.no_spb }}</span></div>
+      <div class="col-3 float-left text-end">
+        <argon-button v-if="detail.status && detail.status !== 'Menunggu Approval'" color="secondary" size="sm" @click="openPrintPreview()">🖨️ Preview / Print</argon-button>
+      </div>
       <div class="col-1 float-right">
         <i style="cursor: pointer;" class="fa fa-times" aria-hidden="true" @click="formDetail.show = false"></i>
       </div>
     </div><hr>
     <div class="modal__content container" v-if="detail.id">
-      <p>
-        <b>Divisi:</b> {{ detail.divisi }} &ensp;|&ensp;
-        <b>Status:</b> <span class="status-pill" :style="statusPillStyle(detail.status)">{{ statusLabel(detail.status) }}</span><br>
-        <b>Dibuat oleh:</b> {{ detail.created_by }} pada {{ detail.request_date }}
-      </p>
-      <hr>
-      <h6>Barang yang Diminta</h6>
-      <div class="table-responsive">
-        <table class="table table-sm">
-          <thead>
-            <tr>
-              <th>Kode Material</th><th>Nama Barang</th><th>Kategori</th><th>Spesifikasi</th>
-              <th>Merek</th><th>Qty</th><th>Satuan</th><th>Stok Aktual / Min</th><th>Keterangan</th>
-            </tr>
-          </thead>
+      <div class="section-box">
+        <table class="table table-sm table-borderless mb-0 info-table">
           <tbody>
-            <tr v-for="(it, i) in detail.items" :key="i">
-              <td>{{ it.material_code || '-' }}</td>
-              <td>{{ it.material_name }}</td>
-              <td>{{ it.kategori || '-' }}</td>
-              <td>{{ it.specification || '-' }}</td>
-              <td>{{ it.merek || '-' }}</td>
-              <td>{{ it.qty }}</td>
-              <td>{{ it.unit }}</td>
-              <td>{{ it.actual_stock !== null && it.actual_stock !== undefined ? it.actual_stock + ' / ' + it.min_stock : '-' }}</td>
-              <td>{{ it.note || '-' }}</td>
+            <tr>
+              <td class="text-uppercase text-secondary text-xxs font-weight-bolder" style="width:140px;">Divisi</td>
+              <td>{{ detail.divisi }}</td>
+            </tr>
+            <tr>
+              <td class="text-uppercase text-secondary text-xxs font-weight-bolder">Status</td>
+              <td><span class="status-pill" :style="statusPillStyle(detail.status)">{{ statusLabel(detail.status) }}</span></td>
+            </tr>
+            <tr>
+              <td class="text-uppercase text-secondary text-xxs font-weight-bolder">Dibuat oleh</td>
+              <td>{{ detail.created_by }} <span class="text-secondary text-sm">— {{ detail.request_date }}</span></td>
             </tr>
           </tbody>
         </table>
       </div>
 
+      <div class="section-box">
+        <h6 class="section-title">Barang yang Diminta</h6>
+        <div class="table-responsive p-0 scroll">
+          <table class="table table-sm align-middle mb-0 grid-table">
+            <thead>
+              <tr>
+                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Kode Material</th><th class="text-uppercase text-secondary text-xxs font-weight-bolder">Nama Barang</th><th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Kategori</th><th class="text-uppercase text-secondary text-xxs font-weight-bolder">Spesifikasi</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Merek</th><th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Qty</th><th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Satuan</th><th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Stok Aktual / Min</th><th class="text-uppercase text-secondary text-xxs font-weight-bolder">Keterangan</th><th class="text-uppercase text-secondary text-xxs font-weight-bolder">Vendor Terpilih</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(it, i) in detail.items" :key="i">
+                <td class="text-center">{{ it.material_code || '-' }}</td>
+                <td>{{ it.material_name }}</td>
+                <td class="text-center">{{ it.kategori || '-' }}</td>
+                <td>{{ it.specification || '-' }}</td>
+                <td>{{ it.merek || '-' }}</td>
+                <td class="text-center">{{ it.qty }}</td>
+                <td class="text-center">{{ it.unit }}</td>
+                <td class="text-center">{{ it.actual_stock !== null && it.actual_stock !== undefined ? it.actual_stock + ' / ' + it.min_stock : '-' }}</td>
+                <td>{{ it.note || '-' }}</td>
+                <td>
+                  <span v-if="itemSelectedVendor(it)">{{ itemSelectedVendor(it).supplier }}</span>
+                  <span v-else class="text-secondary">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-box">
+        <h6 class="section-title">Riwayat Proses</h6>
+        <div class="table-responsive p-0 scroll">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr><th class="text-uppercase text-secondary text-xxs font-weight-bolder">Tahap</th><th class="text-uppercase text-secondary text-xxs font-weight-bolder">Keterangan</th><th class="text-uppercase text-secondary text-xxs font-weight-bolder">Oleh</th><th class="text-uppercase text-secondary text-xxs font-weight-bolder">Tanggal</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>Pengajuan SPPB</b></td>
+                <td>-</td>
+                <td>{{ detail.created_by }}</td>
+                <td>{{ detail.request_date }}</td>
+              </tr>
+              <tr v-if="detail.approved_by">
+                <td><b>Approval</b></td>
+                <td>{{ detail.status === 'Ditolak' ? 'Ditolak' : 'Disetujui' }}{{ detail.approval_note ? ' — ' + detail.approval_note : '' }}</td>
+                <td>{{ detail.approved_by }}</td>
+                <td>{{ detail.approved_at }}</td>
+              </tr>
+              <tr v-if="detail.disposisi_by">
+                <td><b>Disposisi</b></td>
+                <td>{{ detail.disposisi_note || '-' }}</td>
+                <td>{{ detail.disposisi_by }}</td>
+                <td>{{ detail.disposisi_at }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- TAHAP: Menunggu Approval -->
-      <div v-if="detail.status === 'Menunggu Approval'">
-        <hr><h6>Approval Atasan</h6>
+      <div v-if="detail.status === 'Menunggu Approval'" class="action-box">
+        <h6 class="section-title">Approval Atasan</h6>
         <div v-if="userRole === 'Admin'">
-          <textarea class="form-control mb-2" placeholder="Catatan approval (opsional)" v-model="actionForm.approval_note"></textarea>
+          <textarea class="form-control mb-3" placeholder="Catatan approval (opsional)" v-model="actionForm.approval_note"></textarea>
           <argon-button color="success" size="sm" class="me-2" @click="doApprove(true)">Setujui</argon-button>
           <argon-button color="danger" size="sm" @click="doApprove(false)">Tolak</argon-button>
         </div>
-        <p v-else class="text-secondary text-sm">Menunggu approval dari Admin/atasan.</p>
+        <p v-else class="text-secondary text-sm mb-0">Menunggu approval dari Admin/atasan.</p>
       </div>
 
       <!-- TAHAP: Ditolak -->
-      <div v-if="detail.status === 'Ditolak'">
-        <hr><p class="text-danger"><b>SPPB ini ditolak.</b> Catatan: {{ detail.approval_note }}</p>
+      <div v-if="detail.status === 'Ditolak'" class="section-box">
+        <table class="table table-sm table-borderless mb-2">
+          <tbody>
+            <tr><td class="text-danger" style="width:160px;"><b>SPPB Ditolak</b></td><td class="text-danger">Ya</td></tr>
+            <tr><td class="text-secondary"><b>Catatan</b></td><td>{{ detail.approval_note || '-' }}</td></tr>
+          </tbody>
+        </table>
         <div v-if="userRole === 'Admin'">
           <p class="text-secondary text-sm">Admin bisa membatalkan penolakan dan menyetujui ulang SPPB ini:</p>
           <textarea class="form-control mb-2" placeholder="Catatan approval (opsional)" v-model="actionForm.approval_note"></textarea>
@@ -226,119 +295,155 @@
         </div>
       </div>
 
-      <!-- TAHAP: Permintaan Pengadaan (komparasi & pilih vendor, khusus Admin) -->
+      <!-- TAHAP: Permintaan Pengadaan (komparasi vendor PER BARANG, khusus Purchasing) -->
       <div v-if="detail.status === 'Permintaan Pengadaan'">
-        <hr>
-        <div v-if="userRole === 'Admin'">
-          <h6>Komparasi Penawaran Vendor</h6>
-          <table class="table table-sm" v-if="detail.conditions && detail.conditions.length">
-            <thead><tr><th>Pilih</th><th>#</th><th>Vendor</th><th>Harga</th><th>Catatan</th></tr></thead>
-            <tbody>
-              <tr v-for="(c, i) in detail.conditions" :key="i" :class="c.selected ? 'table-success' : ''">
-                <td><input type="radio" name="selectedVendor" :checked="c.selected" @change="doSelectVendor(c.id)"></td>
-                <td>{{ c.round }}</td>
-                <td>{{ c.supplier }} <span v-if="c.selected" class="badge bg-success">Terpilih</span></td>
-                <td>{{ c.price }}</td>
-                <td>{{ c.condition_note }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <p v-else class="text-secondary text-sm">Belum ada penawaran vendor yang ditambahkan.</p>
-
-          <h6>Tambah Penawaran Vendor</h6>
-          <div class="row">
-            <div class="col-4">
-              <select class="form-select" v-model="actionForm.vendor_id">
-                <option value="">Pilih Vendor</option>
-                <option v-for="v in vendors" :key="v.id" :value="v.id">{{ v.name }}</option>
-              </select>
-            </div>
-            <div class="col-4"><input type="number" class="form-control" placeholder="Harga Penawaran" v-model="actionForm.price"></div>
-            <div class="col-4"><input class="form-control" placeholder="Syarat/Catatan" v-model="actionForm.condition_note"></div>
-          </div>
-          <argon-button color="info" size="sm" class="mt-2" @click="doAddCondition()">Simpan Penawaran</argon-button>
-
-          <hr><h6>Finalisasi Pilihan Vendor</h6>
-          <p class="text-secondary text-sm" v-if="!detail.conditions || !detail.conditions.some(c => c.selected)">
-            Pilih (radio) salah satu vendor di atas terlebih dahulu.
-          </p>
-          <textarea class="form-control mb-2" placeholder="Catatan (opsional)" v-model="actionForm.disposisi_note"></textarea>
-          <argon-button color="success" size="sm" class="me-2" :disabled="!detail.conditions || !detail.conditions.some(c => c.selected)" @click="doDisposisi(true)">Konfirmasi & Lanjutkan ke Purchasing</argon-button>
-          <argon-button color="warning" size="sm" @click="doDisposisi(false)">Belum Ada yang Sesuai</argon-button>
-        </div>
-        <p v-else class="text-secondary text-sm">SPPB sedang diproses oleh Admin (komparasi & pemilihan vendor).</p>
-      </div>
-
-      <!-- TAHAP: Disposisi (siap terbitkan PO, khusus Purchasing) -->
-      <div v-if="detail.status === 'Disposisi'">
-        <hr><h6>Terbitkan Purchase Order</h6>
         <div v-if="userRole === 'Purchasing'">
-          <div class="row">
-            <div class="col-6"><input class="form-control mb-2" placeholder="No. PO" v-model="actionForm.po_number"></div>
-            <div class="col-6"><input type="date" class="form-control mb-2" v-model="actionForm.po_date"></div>
-            <div class="col-6"><input class="form-control mb-2" placeholder="Supplier" v-model="actionForm.po_supplier"></div>
-            <div class="col-6"><input type="number" class="form-control mb-2" placeholder="Total (Rp)" v-model="actionForm.po_total"></div>
-          </div>
-          <argon-button color="success" size="sm" @click="doIssuePO()">Terbitkan PO</argon-button>
-        </div>
-        <p v-else class="text-secondary text-sm">Menunggu akun Purchasing menerbitkan PO.</p>
-      </div>
+          <h6 class="section-title">Komparasi Penawaran Vendor per Barang</h6>
+          <p class="text-secondary text-sm">Tiap barang bisa punya vendor pemenang yang berbeda-beda. Sistem akan otomatis membuat PO terpisah untuk setiap vendor.</p>
 
-      <!-- TAHAP: PO Diterbitkan (Receive Material, khusus Purchasing) -->
-      <div v-if="detail.status === 'PO Diterbitkan'">
-        <hr><p><b>No. PO:</b> {{ detail.po_number }} | <b>Supplier:</b> {{ detail.po_supplier }} | <b>Total:</b> {{ detail.po_total }}</p>
-        <div v-if="userRole === 'Purchasing'">
-          <h6>Receive Material (Barang Diterima)</h6>
-          <textarea class="form-control mb-2" placeholder="Catatan resolusi" v-model="actionForm.resolusi_note"></textarea>
-          <argon-button color="success" size="sm" @click="doResolusi()">Simpan Resolusi</argon-button>
-        </div>
-        <p v-else class="text-secondary text-sm">Menunggu akun Purchasing menerima barang.</p>
-      </div>
+          <div v-for="(it, i) in detail.items" :key="'item-cmp-' + i" class="section-box">
+            <table class="table table-sm table-borderless mb-2 info-table">
+              <tbody>
+                <tr>
+                  <td class="text-uppercase text-secondary text-xxs font-weight-bolder" style="width:140px;">Barang</td>
+                  <td><b>{{ it.material_name }}</b></td>
+                </tr>
+                <tr>
+                  <td class="text-uppercase text-secondary text-xxs font-weight-bolder">Qty</td>
+                  <td>{{ it.qty }} {{ it.unit }}</td>
+                </tr>
+                <tr v-if="itemSelectedVendor(it)">
+                  <td class="text-uppercase text-secondary text-xxs font-weight-bolder">Vendor Terpilih</td>
+                  <td><span class="badge bg-success">{{ itemSelectedVendor(it).supplier }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <table class="table table-sm mb-2" v-if="it.conditions && it.conditions.length">
+              <thead><tr><th>Pilih</th><th>#</th><th>Vendor</th><th>Harga</th><th>Catatan</th></tr></thead>
+              <tbody>
+                <tr v-for="(c, j) in it.conditions" :key="j" :class="c.selected ? 'table-success' : ''">
+                  <td><input type="radio" :name="'vendorItem' + it.id" :checked="c.selected" @change="doSelectItemCondition(c.id)"></td>
+                  <td>{{ c.round }}</td>
+                  <td>{{ c.supplier }}</td>
+                  <td>Rp {{ formatRupiah(c.price) }}</td>
+                  <td>{{ c.condition_note }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p v-else class="text-secondary text-sm">Belum ada penawaran vendor untuk barang ini.</p>
 
-      <!-- TAHAP: Resolusi (Invoice, khusus Purchasing) -->
-      <div v-if="detail.status === 'Resolusi'">
-        <hr>
-        <div v-if="userRole === 'Purchasing'">
-          <h6>Catat Invoice Supplier</h6>
-          <div class="row">
-            <div class="col-4"><input class="form-control mb-2" placeholder="No. Invoice" v-model="actionForm.invoice_number"></div>
-            <div class="col-4"><input type="date" class="form-control mb-2" v-model="actionForm.invoice_date"></div>
-            <div class="col-4"><input type="number" class="form-control mb-2" placeholder="Jumlah (Rp)" v-model="actionForm.invoice_amount"></div>
-          </div>
-          <argon-button color="success" size="sm" @click="doInvoice()">Simpan Invoice</argon-button>
-        </div>
-        <p v-else class="text-secondary text-sm">Menunggu akun Purchasing mencatat invoice.</p>
-      </div>
-
-      <!-- TAHAP: Invoice (Payment, khusus Purchasing) -->
-      <div v-if="detail.status === 'Invoice'">
-        <hr><p><b>No. Invoice:</b> {{ detail.invoice_number }} | <b>Jumlah:</b> {{ detail.invoice_amount }}</p>
-        <div v-if="userRole === 'Purchasing'">
-          <h6>Catat Pembayaran</h6>
-          <div class="row">
-            <div class="col-4"><input type="date" class="form-control mb-2" v-model="actionForm.payment_date"></div>
-            <div class="col-4"><input type="number" class="form-control mb-2" placeholder="Jumlah (Rp)" v-model="actionForm.payment_amount"></div>
-            <div class="col-4">
-              <select class="form-select mb-2" v-model="actionForm.payment_method">
-                <option value="">Metode Pembayaran</option>
-                <option>Transfer Bank</option>
-                <option>Cash</option>
-                <option>Giro</option>
-              </select>
+            <div class="row g-2" v-if="itemForms[it.id]">
+              <div class="col-4">
+                <input class="form-control form-control-sm" list="vendorNameList" v-model="itemForms[it.id].vendor_name" @input="onItemVendorNameInput(it)" placeholder="Ketik/pilih nama vendor">
+              </div>
+              <div class="col-3"><input type="text" inputmode="numeric" class="form-control form-control-sm" placeholder="Harga (Rp)" :value="formatRupiah(itemForms[it.id].price)" @input="onCurrencyInput(itemForms[it.id], 'price', $event)"></div>
+              <div class="col-3"><input class="form-control form-control-sm" placeholder="Syarat/Catatan" v-model="itemForms[it.id].condition_note"></div>
+              <div class="col-2"><argon-button color="info" size="sm" @click="doAddItemCondition(it)">Simpan</argon-button></div>
             </div>
           </div>
-          <argon-button color="success" size="sm" @click="doPayment()">Simpan Pembayaran</argon-button>
+          <datalist id="vendorNameList">
+            <option v-for="v in vendors" :key="v.id" :value="v.name"></option>
+          </datalist>
+
+          <div class="action-box">
+            <h6 class="section-title">Finalisasi Pilihan Vendor</h6>
+            <p class="text-secondary text-sm" v-if="!allItemsHaveSelectedVendor()">
+              Semua barang harus punya vendor terpilih terlebih dahulu sebelum bisa lanjut.
+            </p>
+            <textarea class="form-control mb-2" placeholder="Catatan (opsional)" v-model="actionForm.disposisi_note"></textarea>
+            <argon-button color="success" size="sm" class="me-2" :disabled="!allItemsHaveSelectedVendor()" @click="doDisposisi(true)">Konfirmasi & Terbitkan PO</argon-button>
+            <argon-button color="warning" size="sm" @click="doDisposisi(false)">Belum Ada yang Sesuai</argon-button>
+          </div>
         </div>
-        <p v-else class="text-secondary text-sm">Menunggu akun Purchasing mencatat pembayaran.</p>
+        <p v-else class="text-secondary text-sm">SPPB sedang diproses oleh Purchasing (komparasi & pemilihan vendor per barang).</p>
+      </div>
+
+      <!-- PURCHASE ORDER (otomatis kepecah per vendor, tiap PO progress sendiri-sendiri) -->
+      <div v-if="detail.purchase_orders && detail.purchase_orders.length">
+        <h6 class="section-title">Purchase Order ({{ detail.purchase_orders.length }})</h6>
+        <div v-for="(po, i) in detail.purchase_orders" :key="'po-card-' + i" class="section-box">
+            <table class="table table-sm table-borderless mb-2 info-table">
+              <tbody>
+                <tr>
+                  <td class="text-uppercase text-secondary text-xxs font-weight-bolder" style="width:140px;">No. PO</td>
+                  <td>{{ po.po_number }}</td>
+                </tr>
+                <tr>
+                  <td class="text-uppercase text-secondary text-xxs font-weight-bolder">Vendor</td>
+                  <td>{{ po.supplier }}</td>
+                </tr>
+                <tr>
+                  <td class="text-uppercase text-secondary text-xxs font-weight-bolder">Total</td>
+                  <td>Rp {{ formatRupiah(po.po_total) }}</td>
+                </tr>
+                <tr>
+                  <td class="text-uppercase text-secondary text-xxs font-weight-bolder">Status</td>
+                  <td>
+                    <span class="status-pill" :style="statusPillStyle(po.status)">{{ statusLabel(po.status) }}</span>
+                    <argon-button color="secondary" size="sm" class="ms-2" @click="openPrintPoPreview(po)">🖨️ Preview / Print PO</argon-button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <table class="table table-sm mb-2">
+              <thead><tr><th>Barang</th><th>Qty</th></tr></thead>
+              <tbody>
+                <tr v-for="(it, j) in po.items" :key="j"><td>{{ it.material_name }}</td><td>{{ it.qty }} {{ it.unit }}</td></tr>
+              </tbody>
+            </table>
+
+            <div v-if="po.status === 'PO Diterbitkan'">
+              <div v-if="userRole === 'Purchasing'">
+                <textarea class="form-control form-control-sm mb-2" placeholder="Catatan resolusi" v-model="poForms[po.id].resolusi_note"></textarea>
+                <argon-button color="success" size="sm" @click="doResolusiPo(po)">Simpan Resolusi (Barang Diterima)</argon-button>
+              </div>
+              <p v-else class="text-secondary text-sm mb-0">Menunggu Purchasing menerima barang.</p>
+            </div>
+
+            <div v-if="po.status === 'Resolusi'">
+              <div v-if="userRole === 'Purchasing'">
+                <div class="row g-2">
+                  <div class="col-4"><input class="form-control form-control-sm" placeholder="No. Invoice" v-model="poForms[po.id].invoice_number"></div>
+                  <div class="col-4"><input type="date" class="form-control form-control-sm" v-model="poForms[po.id].invoice_date"></div>
+                  <div class="col-4"><input type="text" inputmode="numeric" class="form-control form-control-sm" placeholder="Jumlah (Rp)" :value="formatRupiah(poForms[po.id].invoice_amount)" @input="onCurrencyInput(poForms[po.id], 'invoice_amount', $event)"></div>
+                </div>
+                <argon-button color="success" size="sm" class="mt-2" @click="doInvoicePo(po)">Simpan Invoice</argon-button>
+              </div>
+              <p v-else class="text-secondary text-sm mb-0">Menunggu Purchasing mencatat invoice.</p>
+            </div>
+
+            <div v-if="po.status === 'Invoice'">
+              <div v-if="userRole === 'Purchasing'">
+                <div class="row g-2">
+                  <div class="col-4"><input type="date" class="form-control form-control-sm" v-model="poForms[po.id].payment_date"></div>
+                  <div class="col-4"><input type="text" inputmode="numeric" class="form-control form-control-sm" placeholder="Jumlah (Rp)" :value="formatRupiah(poForms[po.id].payment_amount)" @input="onCurrencyInput(poForms[po.id], 'payment_amount', $event)"></div>
+                  <div class="col-4">
+                    <select class="form-select form-select-sm" v-model="poForms[po.id].payment_method">
+                      <option value="">Metode Pembayaran</option>
+                      <option>Transfer Bank</option>
+                      <option>Cash</option>
+                      <option>Giro</option>
+                    </select>
+                  </div>
+                </div>
+                <argon-button color="success" size="sm" class="mt-2" @click="doPaymentPo(po)">Simpan Pembayaran</argon-button>
+              </div>
+              <p v-else class="text-secondary text-sm mb-0">Menunggu Purchasing mencatat pembayaran.</p>
+            </div>
+
+            <p v-if="po.status === 'Selesai'" class="text-success text-sm mb-0">
+              <b>PO ini sudah selesai.</b> Invoice: {{ po.invoice_number }} (Rp {{ formatRupiah(po.invoice_amount) }}) — Dibayar {{ po.payment_date }} Rp {{ formatRupiah(po.payment_amount) }} via {{ po.payment_method }}
+            </p>
+        </div>
       </div>
 
       <!-- TAHAP: Selesai -->
-      <div v-if="detail.status === 'Selesai'">
-        <hr>
-        <p class="text-success"><b>SPPB ini sudah selesai.</b></p>
-        <p><b>No. PO:</b> {{ detail.po_number }} — {{ detail.po_supplier }} (Rp {{ detail.po_total }})<br>
-           <b>Invoice:</b> {{ detail.invoice_number }} (Rp {{ detail.invoice_amount }})<br>
-           <b>Dibayar:</b> {{ detail.payment_date }} — Rp {{ detail.payment_amount }} via {{ detail.payment_method }}</p>
+      <div v-if="detail.status === 'Selesai'" class="section-box">
+        <table class="table table-sm table-borderless mb-0 info-table">
+          <tbody>
+            <tr><td class="text-success" style="width:220px;"><b>Status Akhir</b></td><td class="text-success">Semua Purchase Order pada SPPB ini sudah selesai</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </vue-final-modal>
@@ -354,6 +459,7 @@ import spb from '@/services/spb.service';
 import akun from '@/services/akun.service';
 import vendor from '@/services/vendor.service';
 import stockBarang from '@/services/stockBarang.service';
+import config from '@/configs/config';
 
 export default {
   name: "sppb",
@@ -374,6 +480,8 @@ export default {
       newSpb: { divisi: '', items: [] },
       detail: {},
       actionForm: {},
+      itemForms: {},
+      poForms: {},
       kategoriList: {
         A: 'Aset', B: 'Consumable', C: 'Sparepart', D: 'Tools',
         E: 'Jasa', F: 'Maintenance', G: 'Stationary', H: 'Lain-lain',
@@ -455,10 +563,18 @@ export default {
         item.material_code = stock.material_code;
         item.specification = stock.specification;
         item.unit = stock.unit;
-      } else {
-        // ketik nama yang belum ada di master -> anggap barang baru, manual
+        item.actual_stock = stock.stock_barang;
+        item.min_stock = stock.min_stock;
+      } else if (item.material_code) {
+        // sebelumnya nyambung ke master, sekarang sudah tidak match lagi -> reset semua field otomatis
         item.material_code = '';
+        item.specification = '';
+        item.unit = '';
+        item.actual_stock = '';
+        item.min_stock = '';
       }
+      // kalau dari awal memang barang baru (material_code sudah kosong),
+      // biarkan specification/unit/actual_stock/min_stock yang sudah diketik manual, jangan direset
     },
     openCreate() {
       this.newSpb = { divisi: '', items: [] };
@@ -466,14 +582,25 @@ export default {
       this.formCreate.show = true;
     },
     addItemRow() {
-      this.newSpb.items.push({ material_name: '', material_code: '', kategori: '', merek: '', specification: '', qty: 1, unit: '', note: '' });
+      this.newSpb.items.push({ material_name: '', material_code: '', kategori: '', merek: '', specification: '', qty: 1, unit: '', note: '', actual_stock: '', min_stock: '' });
     },
     submitCreate() {
       let context = this;
       if (context.submitting) return;
+      if (!context.newSpb.divisi) {
+        context.notify('Divisi wajib dipilih', 'error');
+        return;
+      }
       if (context.newSpb.items.length === 0) {
         context.notify('Minimal 1 barang wajib diisi', 'error');
         return;
+      }
+      for (let i = 0; i < context.newSpb.items.length; i++) {
+        const it = context.newSpb.items[i];
+        if (!it.material_name || !it.kategori || !it.specification || !it.merek || !it.qty || Number(it.qty) < 1 || !it.unit || !it.note) {
+          context.notify(`Baris barang #${i + 1}: semua kolom bertanda * wajib diisi`, 'error');
+          return;
+        }
       }
       context.submitting = true;
       Api(context, spb.create(context.newSpb)).onSuccess(function () {
@@ -486,11 +613,48 @@ export default {
         context.submitting = false;
       }).call();
     },
+    formatRupiah(value) {
+      if (value === null || value === undefined || value === '') return '';
+      const num = Number(value);
+      if (isNaN(num)) return value;
+      return new Intl.NumberFormat('id-ID').format(num);
+    },
+    onCurrencyInput(obj, field, event) {
+      const raw = event.target.value.replace(/\D/g, '');
+      obj[field] = raw ? parseInt(raw, 10) : '';
+      event.target.value = raw ? this.formatRupiah(raw) : '';
+    },
+    itemSelectedVendor(item) {
+      if (!item || !item.conditions) return null;
+      return item.conditions.find(c => c.selected) || null;
+    },
+    allItemsHaveSelectedVendor() {
+      if (!this.detail || !this.detail.items || this.detail.items.length === 0) return false;
+      return this.detail.items.every(it => this.itemSelectedVendor(it));
+    },
+    initForms() {
+      const itemForms = {};
+      (this.detail.items || []).forEach(it => {
+        itemForms[it.id] = { vendor_name: '', vendor_id: '', price: '', condition_note: '' };
+      });
+      this.itemForms = itemForms;
+
+      const poForms = {};
+      (this.detail.purchase_orders || []).forEach(po => {
+        poForms[po.id] = {
+          resolusi_note: '',
+          invoice_number: '', invoice_date: '', invoice_amount: '',
+          payment_date: '', payment_amount: '', payment_method: '',
+        };
+      });
+      this.poForms = poForms;
+    },
     openDetail(id) {
       let context = this;
       context.actionForm = {};
       Api(context, spb.show(id)).onSuccess(function (response) {
         context.detail = response.data.data;
+        context.initForms();
         context.formDetail.show = true;
       }).onError(function () {
         context.notify('Gagal mengambil detail SPPB', 'error');
@@ -501,6 +665,7 @@ export default {
       Api(context, spb.show(context.detail.id)).onSuccess(function (response) {
         context.detail = response.data.data;
         context.actionForm = {};
+        context.initForms();
         context.get();
       }).call();
     },
@@ -513,12 +678,25 @@ export default {
         context.notify('Gagal memproses approval', 'error');
       }).call();
     },
-    doAddCondition() {
+    onItemVendorNameInput(item) {
+      const vendor = this.vendors.find(v => v.name === this.itemForms[item.id].vendor_name);
+      this.itemForms[item.id].vendor_id = vendor ? vendor.id : '';
+    },
+    doAddItemCondition(item) {
       let context = this;
-      Api(context, spb.addCondition(context.detail.id, {
-        vendor_id: context.actionForm.vendor_id,
-        price: context.actionForm.price,
-        condition_note: context.actionForm.condition_note,
+      const form = context.itemForms[item.id];
+      if (!form.vendor_id) {
+        context.notify('Pilih vendor yang valid dari daftar (nama harus cocok persis)', 'error');
+        return;
+      }
+      if (!form.price) {
+        context.notify('Harga penawaran wajib diisi', 'error');
+        return;
+      }
+      Api(context, spb.addItemCondition(item.id, {
+        vendor_id: form.vendor_id,
+        price: form.price,
+        condition_note: form.condition_note,
       })).onSuccess(function () {
         context.notify('Penawaran Vendor Berhasil Ditambahkan', 'success');
         context.refreshDetail();
@@ -526,10 +704,10 @@ export default {
         context.notify('Gagal Menambahkan Penawaran', 'error');
       }).call();
     },
-    doSelectVendor(conditionId) {
+    doSelectItemCondition(conditionId) {
       let context = this;
-      Api(context, spb.selectCondition(conditionId)).onSuccess(function () {
-        context.notify('Vendor Terpilih', 'success');
+      Api(context, spb.selectItemCondition(conditionId)).onSuccess(function () {
+        context.notify('Vendor Terpilih Untuk Barang Ini', 'success');
         context.refreshDetail();
       }).onError(function () {
         context.notify('Gagal Memilih Vendor', 'error');
@@ -537,48 +715,47 @@ export default {
     },
     doDisposisi(setuju) {
       let context = this;
-      Api(context, spb.disposisi(context.detail.id, { disposisi: setuju, disposisi_note: context.actionForm.disposisi_note })).onSuccess(function () {
-        context.notify(setuju ? 'Lanjut ke Purchasing' : 'Kembali ke Permintaan Pengadaan', 'success');
+      Api(context, spb.disposisi(context.detail.id, { disposisi: setuju, disposisi_note: context.actionForm.disposisi_note })).onSuccess(function (response) {
+        context.notify((response.data && response.data.message) || (setuju ? 'PO Berhasil Diterbitkan' : 'Kembali ke Permintaan Pengadaan'), 'success');
         context.refreshDetail();
       }).onError(function () {
         context.notify('Gagal memproses disposisi', 'error');
       }).call();
     },
-    doIssuePO() {
+    doResolusiPo(po) {
       let context = this;
-      Api(context, spb.issuePO(context.detail.id, context.actionForm)).onSuccess(function () {
-        context.notify('PO Berhasil Diterbitkan', 'success');
-        context.refreshDetail();
-      }).onError(function () {
-        context.notify('Gagal Menerbitkan PO', 'error');
-      }).call();
-    },
-    doResolusi() {
-      let context = this;
-      Api(context, spb.resolusi(context.detail.id, context.actionForm)).onSuccess(function () {
+      Api(context, spb.resolusiPo(po.id, context.poForms[po.id])).onSuccess(function () {
         context.notify('Resolusi Berhasil Disimpan', 'success');
         context.refreshDetail();
       }).onError(function () {
         context.notify('Gagal Menyimpan Resolusi', 'error');
       }).call();
     },
-    doInvoice() {
+    doInvoicePo(po) {
       let context = this;
-      Api(context, spb.invoice(context.detail.id, context.actionForm)).onSuccess(function () {
+      Api(context, spb.invoicePo(po.id, context.poForms[po.id])).onSuccess(function () {
         context.notify('Invoice Berhasil Disimpan', 'success');
         context.refreshDetail();
       }).onError(function () {
         context.notify('Gagal Menyimpan Invoice', 'error');
       }).call();
     },
-    doPayment() {
+    doPaymentPo(po) {
       let context = this;
-      Api(context, spb.payment(context.detail.id, context.actionForm)).onSuccess(function () {
-        context.notify('Pembayaran Berhasil Disimpan, SPPB Selesai', 'success');
+      Api(context, spb.paymentPo(po.id, context.poForms[po.id])).onSuccess(function (response) {
+        context.notify((response.data && response.data.message) || 'Pembayaran Berhasil Disimpan', 'success');
         context.refreshDetail();
       }).onError(function () {
         context.notify('Gagal Menyimpan Pembayaran', 'error');
       }).call();
+    },
+    openPrintPreview() {
+      const baseUrl = config.apiUrl.trim().replace(/\/$/, '');
+      window.open(baseUrl + '/print-pdf/sppb/' + this.detail.id, '_blank');
+    },
+    openPrintPoPreview(po) {
+      const baseUrl = config.apiUrl.trim().replace(/\/$/, '');
+      window.open(baseUrl + '/print-pdf/po/' + po.id, '_blank');
     },
     doDelete(id, noSpb) {
       let context = this;
@@ -628,5 +805,87 @@ export default {
   white-space: nowrap;
   line-height: 1.2;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.item-table-wrap {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.item-table thead tr {
+  background-color: #F0F8FF;
+}
+.item-table thead th {
+  border-bottom: 2px solid #d7e6f5;
+  padding: 0.6rem 0.75rem;
+}
+.item-table tbody td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid #eef2f7;
+}
+.item-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.item-table tbody tr:hover {
+  background-color: #f8fbff;
+}
+.section-title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #344767;
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+}
+.section-title::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #adb5bd;
+  margin-right: 8px;
+}
+.section-box, .action-box {
+  background-color: #ffffff;
+  border: 1px solid #eaecef;
+  border-radius: 0.65rem;
+  padding: 1.1rem 1.35rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.035);
+}
+.info-table td {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  vertical-align: middle;
+}
+.grid-table {
+  border: 1px solid #edf0f3;
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+.grid-table thead th {
+  background-color: #f8f9fb;
+  border-bottom: 1px solid #edf0f3;
+  padding: 0.55rem 0.7rem;
+}
+.grid-table tbody td {
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid #f1f3f5;
+  border-right: 1px solid #f4f5f7;
+}
+.grid-table tbody td:last-child {
+  border-right: none;
+}
+.grid-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.grid-table tbody tr:hover {
+  background-color: #fafbfc;
+}
+.info-table .status-pill {
+  white-space: normal;
+  min-width: 0;
+  max-width: 100%;
 }
 </style>

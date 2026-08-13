@@ -2,7 +2,7 @@
   <div class="py-4 container-fluid">
     <div class="row">
       <div class="col-lg-12">
-        <div class="row">
+        <div class="row dashboard-stat-row">
           <div class="col-lg-3 col-md-6 col-12">
             <card
               title="Total Item"
@@ -368,7 +368,15 @@ export default {
 }
 .modal__title {
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
+}
+
+.dashboard-stat-row::v-deep .numbers p {
+  white-space: nowrap;
+  font-size: 0.75rem !important;
+}
+.dashboard-stat-row::v-deep .numbers h5 {
+  font-size: 0.85rem;
 }
 </style>
 

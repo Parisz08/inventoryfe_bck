@@ -14,26 +14,23 @@ export default {
     approve(id, params) {
         return Service().post('spb/approve/'+id, params);
     },
-    addCondition(id, params) {
-        return Service().post('spb/condition/'+id, params);
+    addItemCondition(itemId, params) {
+        return Service().post('spb/item-condition/'+itemId, params);
     },
-    selectCondition(conditionId) {
-        return Service().post('spb/condition/select/'+conditionId);
+    selectItemCondition(conditionId) {
+        return Service().post('spb/item-condition/select/'+conditionId);
     },
     disposisi(id, params) {
         return Service().post('spb/disposisi/'+id, params);
     },
-    issuePO(id, params) {
-        return Service().post('spb/issue-po/'+id, params);
+    resolusiPo(poId, params) {
+        return Service().post('spb/po/resolusi/'+poId, params);
     },
-    resolusi(id, params) {
-        return Service().post('spb/resolusi/'+id, params);
+    invoicePo(poId, params) {
+        return Service().post('spb/po/invoice/'+poId, params);
     },
-    invoice(id, params) {
-        return Service().post('spb/invoice/'+id, params);
-    },
-    payment(id, params) {
-        return Service().post('spb/payment/'+id, params);
+    paymentPo(poId, params) {
+        return Service().post('spb/po/payment/'+poId, params);
     },
     delete(id) {
         return Service().post('spb/delete/'+id);
