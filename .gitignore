@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .DS_Store
 node_modules
 /dist
@@ -24,3 +25,10 @@ pnpm-debug.log*
 
 package-lock.json
 yarn.lock
+=======
+/vendor
+/.idea
+Homestead.json
+Homestead.yaml
+.env
+>>>>>>> 4aafbe24ee8acabd7bc454244ac775c126add18e
