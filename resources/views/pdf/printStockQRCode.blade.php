@@ -1,6 +1,3 @@
-<?php 
-	use SimpleSoftwareIO\QrCode\Facades\QrCode;
-?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -46,7 +43,7 @@
 			          @foreach($data as $index => $value)
 			            <div class="col-2 mr-4 text-center border">
 			            	<br>
-				            {{ QrCode::size(130)->generate(https://inventory.bck.co.id/detail-barang/.$value->material_code) }}<br>
+				            {{ \SimpleSoftwareIO\QrCode\Facades\QrCode::size(130)->generate('https://inventory.bck.co.id/detail-barang/'.$value->material_code) }}<br>
 					          <span style="font-weight: bold">{{$value->material_code}}</span><br>
 			            </div>
 			          @endforeach

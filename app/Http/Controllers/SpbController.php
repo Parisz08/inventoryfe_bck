@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Spb;
 use App\SpbItem;
 use App\SpbCondition;
+use App\SpbItemCondition;
+use App\SpbPurchaseOrder;
 use App\StockBarang;
 use App\Vendor;
 use App\Http\Library\Responses;
@@ -18,7 +20,7 @@ class SpbController extends Controller
 
     public function index(Request $request)
     {
-        $query = Spb::with('items', 'conditions.vendor')->orderBy('created_at', 'desc');
+        $query = Spb::with('items', 'purchaseOrders')->orderBy('created_at', 'desc');
 
         $status = $request->input('status');
         if (!empty($status)) {
@@ -37,7 +39,7 @@ class SpbController extends Controller
 
     public function show($id)
     {
-        $data = Spb::with('items', 'conditions.vendor')->find($id);
+        $data = Spb::with('items.conditions.vendor', 'items.purchaseOrder', 'purchaseOrders.items')->find($id);
 
         if (!$data) {
             return Responses::sendError([], 'SPB Not Found');
@@ -137,32 +139,34 @@ class SpbController extends Controller
     }
 
     /**
-     * Tambah penawaran vendor (komparasi). Hanya Admin.
+     * Tambah penawaran vendor untuk 1 BARANG tertentu (bukan seluruh SPB). Hanya Purchasing.
      */
-    public function addCondition(Request $request, $id)
+    public function addItemCondition(Request $request, $itemId)
     {
         $userData = $this->get();
         $user     = $userData['user'];
 
-        if ($user->role != 'Admin') {
-            return Responses::sendError([], 'Hanya Admin yang bisa menambahkan penawaran vendor');
+        if ($user->role != 'Purchasing') {
+            return Responses::sendError([], 'Hanya Purchasing yang bisa menambahkan penawaran vendor');
         }
 
-        $spb = Spb::find($id);
-        if (!$spb) {
-            return Responses::sendError([], 'SPB Not Found');
+        $item = SpbItem::find($itemId);
+        if (!$item) {
+            return Responses::sendError([], 'Item SPB Not Found');
         }
-        if ($spb->status != 'Permintaan Pengadaan') {
+
+        $spb = Spb::find($item->spb_id);
+        if (!$spb || $spb->status != 'Permintaan Pengadaan') {
             return Responses::sendError([], 'SPB harus berstatus Permintaan Pengadaan untuk menambahkan kondisi');
         }
 
         $vendorId = $request->input('vendor_id');
         $vendor   = $vendorId ? Vendor::find($vendorId) : null;
 
-        $round = $spb->conditions()->count() + 1;
+        $round = $item->conditions()->count() + 1;
 
-        $condition = SpbCondition::create([
-            'spb_id'         => $spb->id,
+        $condition = SpbItemCondition::create([
+            'spb_item_id'    => $item->id,
             'vendor_id'      => $vendorId,
             'round'          => $round,
             'supplier'       => $vendor ? $vendor->name : $request->input('supplier'),
@@ -176,127 +180,148 @@ class SpbController extends Controller
     }
 
     /**
-     * Checklist vendor pemenang. Hanya Admin. Hanya boleh 1 vendor terpilih per SPB.
+     * Checklist vendor pemenang UNTUK 1 BARANG. Hanya Purchasing. Hanya boleh 1 vendor terpilih per barang.
      */
-    public function selectCondition(Request $request, $id)
+    public function selectItemCondition(Request $request, $conditionId)
     {
         $userData = $this->get();
         $user     = $userData['user'];
 
-        if ($user->role != 'Admin') {
-            return Responses::sendError([], 'Hanya Admin yang bisa memilih vendor');
+        if ($user->role != 'Purchasing') {
+            return Responses::sendError([], 'Hanya Purchasing yang bisa memilih vendor');
         }
 
-        $condition = SpbCondition::find($id);
+        $condition = SpbItemCondition::find($conditionId);
         if (!$condition) {
             return Responses::sendError([], 'Penawaran Vendor Not Found');
         }
 
-        $spb = Spb::find($condition->spb_id);
+        $item = SpbItem::find($condition->spb_item_id);
+        $spb  = $item ? Spb::find($item->spb_id) : null;
         if (!$spb || $spb->status != 'Permintaan Pengadaan') {
             return Responses::sendError([], 'SPB harus berstatus Permintaan Pengadaan');
         }
 
-        SpbCondition::where('spb_id', $spb->id)->update(['selected' => false]);
+        SpbItemCondition::where('spb_item_id', $condition->spb_item_id)->update(['selected' => false]);
         $condition->selected = true;
         $condition->save();
 
-        return Responses::sendResponse($condition->load('vendor'), 'Vendor Berhasil Dipilih');
+        return Responses::sendResponse($condition->load('vendor'), 'Vendor Berhasil Dipilih Untuk Barang Ini');
     }
 
     /**
-     * Finalisasi pilihan vendor & lanjut ke Purchasing. Hanya Admin.
+     * Finalisasi pilihan vendor per-barang & otomatis terbitkan PO. Hanya Purchasing.
+     * Setiap barang WAJIB sudah punya vendor terpilih. Barang-barang dikelompokkan
+     * berdasarkan vendor pemenangnya masing-masing, lalu sistem otomatis membuat
+     * 1 Purchase Order terpisah untuk setiap kelompok vendor (No. PO & Total otomatis).
      * Kalau "Belum Ada yang Sesuai" (disposisi=false), balik ke Permintaan Pengadaan untuk nego ulang.
      */
     public function disposisi(Request $request, $id)
     {
+        $userData = $this->get();
+        $user     = $userData['user'];
+
+        if ($user->role != 'Purchasing') {
+            return Responses::sendError([], 'Hanya Purchasing yang bisa melakukan disposisi');
+        }
+
         $validator = app('validator')->make($request->all(), ['disposisi' => 'required|boolean']);
         if ($validator->fails()) {
             return Responses::sendError($validator->errors(), 'Validasi Gagal');
         }
 
-        $spb = Spb::find($id);
+        $spb = Spb::with('items.conditions')->find($id);
         if (!$spb) {
             return Responses::sendError([], 'SPB Not Found');
         }
         if ($spb->status != 'Permintaan Pengadaan') {
             return Responses::sendError([], 'SPB harus berstatus Permintaan Pengadaan untuk disposisi');
         }
-        if ($spb->conditions()->where('selected', true)->count() == 0) {
-            return Responses::sendError([], 'Pilih (checklist) salah satu penawaran vendor terlebih dahulu sebelum disposisi');
-        }
-
-        $userData = $this->get();
-        $user     = $userData['user'];
-
-        if ($user->role != 'Admin') {
-            return Responses::sendError([], 'Hanya Admin yang bisa melakukan disposisi');
-        }
 
         $disposisi = $request->input('disposisi');
+        $groups    = [];
+
+        if ($disposisi) {
+            // Pastikan SEMUA barang sudah punya vendor terpilih
+            foreach ($spb->items as $item) {
+                $hasSelected = $item->conditions->contains(function ($c) {
+                    return $c->selected;
+                });
+                if (!$hasSelected) {
+                    return Responses::sendError([], 'Barang "' . $item->material_name . '" belum punya vendor terpilih. Pilih vendor untuk semua barang terlebih dahulu.');
+                }
+            }
+
+            // Kelompokkan barang berdasarkan vendor pemenang masing-masing
+            foreach ($spb->items as $item) {
+                $selected = $item->conditions->firstWhere('selected', true);
+                $vendorId = $selected->vendor_id ?: 0;
+                if (!isset($groups[$vendorId])) {
+                    $groups[$vendorId] = [
+                        'vendor_id' => $selected->vendor_id,
+                        'supplier'  => $selected->supplier,
+                        'items'     => [],
+                        'total'     => 0,
+                    ];
+                }
+                $groups[$vendorId]['items'][]  = $item;
+                $groups[$vendorId]['total']   += ($selected->price * $item->qty);
+            }
+
+            $baseNumber = str_replace('SPPB-', 'PO-', $spb->no_spb);
+            $multiple   = count($groups) > 1;
+            $index      = 1;
+
+            foreach ($groups as $group) {
+                $poNumber = $multiple ? ($baseNumber . '-' . $index) : $baseNumber;
+
+                $po = SpbPurchaseOrder::create([
+                    'spb_id'     => $spb->id,
+                    'vendor_id'  => $group['vendor_id'],
+                    'supplier'   => $group['supplier'],
+                    'po_number'  => $poNumber,
+                    'po_date'    => date('Y-m-d'),
+                    'po_total'   => $group['total'],
+                    'status'     => 'PO Diterbitkan',
+                    'updated_by' => $user->full_name,
+                ]);
+
+                foreach ($group['items'] as $item) {
+                    $item->spb_purchase_order_id = $po->id;
+                    $item->save();
+                }
+
+                $index++;
+            }
+
+            $spb->status = 'PO Diterbitkan';
+        } else {
+            $spb->status = 'Permintaan Pengadaan';
+        }
 
         $spb->disposisi_by   = $user->full_name;
         $spb->disposisi_at   = Carbon::now();
         $spb->disposisi_note = $request->input('disposisi_note');
-        $spb->status         = $disposisi ? 'Disposisi' : 'Permintaan Pengadaan';
         $spb->updated_by     = $user->full_name;
         $spb->save();
 
-        $message = $disposisi ? 'Vendor Final Terpilih, lanjut ke Purchasing untuk Issued PO' : 'Kembali ke Permintaan Pengadaan';
-        return Responses::sendResponse($spb, $message);
+        $message = $disposisi
+            ? 'Vendor final terpilih untuk semua barang. ' . count($groups) . ' Purchase Order berhasil diterbitkan otomatis.'
+            : 'Kembali ke Permintaan Pengadaan';
+        return Responses::sendResponse($spb->load('items.conditions.vendor', 'purchaseOrders.items'), $message);
     }
 
     /**
-     * Terbitkan PO. Hanya Purchasing.
+     * Receive Material untuk 1 Purchase Order. Hanya Purchasing.
      */
-    public function issuePO(Request $request, $id)
+    public function resolusiPo(Request $request, $poId)
     {
-        $validator = app('validator')->make($request->all(), [
-            'po_number' => 'required',
-            'po_date'   => 'required',
-            'po_total'  => 'required|numeric',
-        ]);
-        if ($validator->fails()) {
-            return Responses::sendError($validator->errors(), 'Validasi Gagal');
+        $po = SpbPurchaseOrder::find($poId);
+        if (!$po) {
+            return Responses::sendError([], 'Purchase Order Not Found');
         }
-
-        $spb = Spb::find($id);
-        if (!$spb) {
-            return Responses::sendError([], 'SPB Not Found');
-        }
-        if ($spb->status != 'Disposisi') {
-            return Responses::sendError([], 'SPB harus berstatus Disposisi (disetujui) untuk menerbitkan PO');
-        }
-
-        $userData = $this->get();
-        $user     = $userData['user'];
-
-        if ($user->role != 'Purchasing') {
-            return Responses::sendError([], 'Hanya akun Purchasing yang bisa menerbitkan PO');
-        }
-
-        $spb->po_number   = $request->input('po_number');
-        $spb->po_date     = $request->input('po_date');
-        $spb->po_supplier = $request->input('po_supplier');
-        $spb->po_total    = $request->input('po_total');
-        $spb->status      = 'PO Diterbitkan';
-        $spb->updated_by  = $user->full_name;
-        $spb->save();
-
-        return Responses::sendResponse($spb, 'Purchase Order Berhasil Diterbitkan');
-    }
-
-    /**
-     * Receive Material. Hanya Purchasing.
-     */
-    public function resolusi(Request $request, $id)
-    {
-        $spb = Spb::find($id);
-        if (!$spb) {
-            return Responses::sendError([], 'SPB Not Found');
-        }
-        if ($spb->status != 'PO Diterbitkan') {
-            return Responses::sendError([], 'SPB harus berstatus PO Diterbitkan untuk resolusi');
+        if ($po->status != 'PO Diterbitkan') {
+            return Responses::sendError([], 'PO harus berstatus PO Diterbitkan untuk resolusi');
         }
 
         $userData = $this->get();
@@ -306,19 +331,19 @@ class SpbController extends Controller
             return Responses::sendError([], 'Hanya akun Purchasing yang bisa mencatat Receive Material');
         }
 
-        $spb->resolusi_note = $request->input('resolusi_note');
-        $spb->resolusi_at   = Carbon::now();
-        $spb->status        = 'Resolusi';
-        $spb->updated_by    = $user->full_name;
-        $spb->save();
+        $po->resolusi_note = $request->input('resolusi_note');
+        $po->resolusi_at   = Carbon::now();
+        $po->status        = 'Resolusi';
+        $po->updated_by    = $user->full_name;
+        $po->save();
 
-        return Responses::sendResponse($spb, 'Resolusi Berhasil Dicatat');
+        return Responses::sendResponse($po, 'Resolusi Berhasil Dicatat');
     }
 
     /**
-     * Catat Invoice. Hanya Purchasing.
+     * Catat Invoice untuk 1 Purchase Order. Hanya Purchasing.
      */
-    public function invoice(Request $request, $id)
+    public function invoicePo(Request $request, $poId)
     {
         $validator = app('validator')->make($request->all(), [
             'invoice_number' => 'required',
@@ -329,12 +354,12 @@ class SpbController extends Controller
             return Responses::sendError($validator->errors(), 'Validasi Gagal');
         }
 
-        $spb = Spb::find($id);
-        if (!$spb) {
-            return Responses::sendError([], 'SPB Not Found');
+        $po = SpbPurchaseOrder::find($poId);
+        if (!$po) {
+            return Responses::sendError([], 'Purchase Order Not Found');
         }
-        if ($spb->status != 'Resolusi') {
-            return Responses::sendError([], 'SPB harus berstatus Resolusi untuk mencatat invoice');
+        if ($po->status != 'Resolusi') {
+            return Responses::sendError([], 'PO harus berstatus Resolusi untuk mencatat invoice');
         }
 
         $userData = $this->get();
@@ -344,20 +369,21 @@ class SpbController extends Controller
             return Responses::sendError([], 'Hanya akun Purchasing yang bisa mencatat Invoice');
         }
 
-        $spb->invoice_number = $request->input('invoice_number');
-        $spb->invoice_date   = $request->input('invoice_date');
-        $spb->invoice_amount = $request->input('invoice_amount');
-        $spb->status         = 'Invoice';
-        $spb->updated_by     = $user->full_name;
-        $spb->save();
+        $po->invoice_number = $request->input('invoice_number');
+        $po->invoice_date   = $request->input('invoice_date');
+        $po->invoice_amount = $request->input('invoice_amount');
+        $po->status         = 'Invoice';
+        $po->updated_by     = $user->full_name;
+        $po->save();
 
-        return Responses::sendResponse($spb, 'Invoice Berhasil Dicatat');
+        return Responses::sendResponse($po, 'Invoice Berhasil Dicatat');
     }
 
     /**
-     * Catat Payment -> SPB Selesai. Hanya Purchasing.
+     * Catat Payment untuk 1 Purchase Order -> PO Selesai. Hanya Purchasing.
+     * Kalau SEMUA PO milik SPB ini sudah Selesai, SPB keseluruhan otomatis ikut jadi Selesai.
      */
-    public function payment(Request $request, $id)
+    public function paymentPo(Request $request, $poId)
     {
         $validator = app('validator')->make($request->all(), [
             'payment_date'   => 'required',
@@ -367,12 +393,12 @@ class SpbController extends Controller
             return Responses::sendError($validator->errors(), 'Validasi Gagal');
         }
 
-        $spb = Spb::find($id);
-        if (!$spb) {
-            return Responses::sendError([], 'SPB Not Found');
+        $po = SpbPurchaseOrder::find($poId);
+        if (!$po) {
+            return Responses::sendError([], 'Purchase Order Not Found');
         }
-        if ($spb->status != 'Invoice') {
-            return Responses::sendError([], 'SPB harus berstatus Invoice untuk mencatat pembayaran');
+        if ($po->status != 'Invoice') {
+            return Responses::sendError([], 'PO harus berstatus Invoice untuk mencatat pembayaran');
         }
 
         $userData = $this->get();
@@ -382,14 +408,28 @@ class SpbController extends Controller
             return Responses::sendError([], 'Hanya akun Purchasing yang bisa mencatat Payment');
         }
 
-        $spb->payment_date   = $request->input('payment_date');
-        $spb->payment_amount = $request->input('payment_amount');
-        $spb->payment_method = $request->input('payment_method');
-        $spb->status         = 'Selesai';
-        $spb->updated_by     = $user->full_name;
-        $spb->save();
+        $po->payment_date   = $request->input('payment_date');
+        $po->payment_amount = $request->input('payment_amount');
+        $po->payment_method = $request->input('payment_method');
+        $po->status         = 'Selesai';
+        $po->updated_by     = $user->full_name;
+        $po->save();
 
-        return Responses::sendResponse($spb, 'Pembayaran Berhasil Dicatat, SPB Selesai');
+        $message = 'Pembayaran Berhasil Dicatat, PO Selesai';
+
+        // Kalau semua PO di SPB ini sudah Selesai, SPB keseluruhan ikut ditandai Selesai
+        $spb = Spb::find($po->spb_id);
+        if ($spb) {
+            $belumSelesai = $spb->purchaseOrders()->where('status', '!=', 'Selesai')->count();
+            if ($belumSelesai == 0) {
+                $spb->status     = 'Selesai';
+                $spb->updated_by = $user->full_name;
+                $spb->save();
+                $message = 'Pembayaran Berhasil Dicatat. Semua PO sudah Selesai, SPB ditandai Selesai.';
+            }
+        }
+
+        return Responses::sendResponse($po, $message);
     }
 
     /**

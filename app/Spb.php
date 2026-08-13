@@ -28,4 +28,9 @@ class Spb extends Model
     {
         return $this->hasMany(SpbCondition::class, 'spb_id')->orderBy('round', 'asc');
     }
+
+    public function purchaseOrders()
+    {
+        return $this->hasMany(SpbPurchaseOrder::class, 'spb_id');
+    }
 }

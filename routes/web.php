@@ -32,6 +32,8 @@ $router->get('/', function () use ($router) {
     // PDF
     $router->get('print-pdf/surat-barang-keluar', 'PrintPdfController@printSuratBarangKeluar');
     $router->get('print-pdf/stock-barang-qr-code', 'PrintPdfController@printStockQRCode');
+    $router->get('print-pdf/sppb/{id}', 'PrintPdfController@printSppb');
+    $router->get('print-pdf/po/{id}', 'PrintPdfController@printPo');
     // $router->get('print-pdf/spl', 'PrintPdfController@printSpl');
 
     $router->get('barang-masuk/cek-material', 'BarangMasukController@cekMaterial');
@@ -41,19 +43,16 @@ $router->group(['middleware' => 'jwt.tymon'], function () use ($router){
 $router->get('spb/show/{id}', 'SpbController@show');
 $router->post('spb/create', 'SpbController@store');
 $router->post('spb/approve/{id}', 'SpbController@approve');
-$router->post('spb/condition/{id}', 'SpbController@addCondition');
-$router->post('spb/condition/select/{id}', 'SpbController@selectCondition');
+$router->post('spb/item-condition/{itemId}', 'SpbController@addItemCondition');
+$router->post('spb/item-condition/select/{conditionId}', 'SpbController@selectItemCondition');
 $router->post('spb/disposisi/{id}', 'SpbController@disposisi');
-$router->post('spb/issue-po/{id}', 'SpbController@issuePO');
-$router->post('spb/resolusi/{id}', 'SpbController@resolusi');
-$router->post('spb/invoice/{id}', 'SpbController@invoice');
-$router->post('spb/payment/{id}', 'SpbController@payment');
+$router->post('spb/po/resolusi/{poId}', 'SpbController@resolusiPo');
+$router->post('spb/po/invoice/{poId}', 'SpbController@invoicePo');
+$router->post('spb/po/payment/{poId}', 'SpbController@paymentPo');
 $router->post('spb/delete/{id}', 'SpbController@destroy');
 
 // VENDOR
 $router->get('vendor/index', 'VendorController@index');
-$router->post('spb/condition/select/{id}', 'SpbController@selectCondition');
-$router->post('spb/delete/{id}', 'SpbController@destroy');
 
     // DASHBOARD
     $router->get('dashboard/index', 'DashboardController@index');

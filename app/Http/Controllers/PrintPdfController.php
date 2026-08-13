@@ -8,10 +8,61 @@ use DB;
 use Carbon\Carbon;
 use App\Karyawan;
 use App\StockBarang;
+use App\Spb;
+use App\SpbPurchaseOrder;
 
 class PrintPdfController extends Controller
 {
-    
+
+    public function printSppb($id)
+    {
+        $spb = Spb::with('items')->find($id);
+
+        if (!$spb) {
+            abort(404, 'SPPB Not Found');
+        }
+
+        foreach ($spb->items as $item) {
+            $stock = StockBarang::where('material_code', $item->material_code)->first();
+            $item->actual_stock = $stock ? $stock->stock_barang : null;
+            $item->min_stock    = $stock ? $stock->min_stock : null;
+        }
+
+        return view('pdf.sppb', compact('spb'));
+    }
+
+    public function printPo($id)
+    {
+        $po = SpbPurchaseOrder::with('items', 'vendor', 'spb')->find($id);
+
+        if (!$po) {
+            abort(404, 'Purchase Order Not Found');
+        }
+
+        // Total sebelum diskon (jumlah harga semua barang)
+        $subtotal = 0;
+        foreach ($po->items as $item) {
+            $condition = $item->conditions()->where('selected', true)->first();
+            $item->unit_price = $condition ? $condition->price : 0;
+            $item->line_total = $item->unit_price * $item->qty;
+            $subtotal += $item->line_total;
+        }
+
+        // Ikuti persis formula di template Excel PO perusahaan:
+        // Total = Jumlah - Discount
+        // DPP Lain = Total x (11/12)
+        // PPN 12% = DPP Lain x 12%
+        // Grand Total = Total + PPN
+        $discountPercent = 0;
+        $discount         = $subtotal * ($discountPercent / 100);
+        $total            = $subtotal - $discount;
+        $dppLain          = $total * (11 / 12);
+        $ppn              = $dppLain * 0.12;
+        $grandTotal       = $total + $ppn;
+
+        return view('pdf.po', compact('po', 'subtotal', 'discountPercent', 'discount', 'total', 'dppLain', 'ppn', 'grandTotal'));
+    }
+
     public function printSuratBarangKeluar(Request $request)
     {
         $data = DB::table('barang_keluar')

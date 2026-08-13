@@ -102,6 +102,7 @@ $app->register(Illuminate\Mail\MailServiceProvider::class);
 $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
 $app->register(Maatwebsite\Excel\ExcelServiceProvider::class);
 $app->register(Spatie\Activitylog\ActivitylogServiceProvider::class);
+$app->register(SimpleSoftwareIO\QrCode\QrCodeServiceProvider::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -120,6 +121,7 @@ $app->alias('mailer', Illuminate\Mail\Mailer::class);
 $app->alias('mailer', Illuminate\Contracts\Mail\Mailer::class);
 $app->alias('mailer', Illuminate\Contracts\Mail\MailQueue::class);
 $app->alias('Excel', Maatwebsite\Excel\Facades\Excel::class);
+$app->alias('QrCode', SimpleSoftwareIO\QrCode\Facades\QrCode::class);
 $app->alias('auth', \Illuminate\Auth\AuthManager::class);
 
 /*
