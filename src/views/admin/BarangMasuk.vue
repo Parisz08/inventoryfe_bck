@@ -69,7 +69,7 @@
                         <span class="text-secondary text-xs font-weight-bold">{{ row.note}}</span>
                       </td>
                       <td class="align-middle text-center">
-                        <span class="text-secondary text-xs font-weight-bold">{{ moment(row.date).locale('id').format('LL') }}</span>
+                        <span class="text-secondary text-xs font-weight-bold">{{ row.date ? moment(row.date).locale('id').format('LL') : '-' }}</span>
                       </td>
                       <td class="align-middle text-center">
                         <span class="text-secondary text-xs font-weight-bold">{{ row.created_by }}</span>

@@ -20,6 +20,15 @@ export default {
     selectItemCondition(conditionId) {
         return Service().post('spb/item-condition/select/'+conditionId);
     },
+    requestVendor(itemId, params) {
+        return Service().post('spb/item-request-vendor/'+itemId, params);
+    },
+    unrequestVendor(requestedVendorId) {
+        return Service().post('spb/item-request-vendor/remove/'+requestedVendorId);
+    },
+    lanjutPenawaran(id) {
+        return Service().post('spb/lanjut-penawaran/'+id);
+    },
     disposisi(id, params) {
         return Service().post('spb/disposisi/'+id, params);
     },

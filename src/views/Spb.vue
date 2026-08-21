@@ -13,7 +13,8 @@
                 <option value="">Semua Status</option>
                 <option>Menunggu Approval</option>
                 <option>Ditolak</option>
-                <option value="Permintaan Pengadaan">Permintaan / Penawaran ke Vendor</option>
+                <option value="Permintaan Vendor">Permintaan ke Vendor</option>
+                <option value="Permintaan Pengadaan">Penawaran Harga Vendor</option>
                 <option>Disposisi</option>
                 <option>PO Diterbitkan</option>
                 <option value="Resolusi">Receive Material</option>
@@ -96,6 +97,11 @@
               <option value="Maintenance">Maintenance</option>
               <option value="Logistic">Logistic</option>
             </select>
+          </p>
+        </div>
+        <div class="col-6">
+          <p>Ditinjau Oleh (Manager Dept.): <span class="text-danger">*</span>
+            <input class="form-control" placeholder="Nama Manager Dept." v-model="newSpb.ditinjau_oleh">
           </p>
         </div>
       </div>
@@ -295,6 +301,65 @@
         </div>
       </div>
 
+      <!-- TAHAP: Permintaan Vendor (pilih vendor yg diminta penawaran, belum ada harga) -->
+      <div v-if="detail.status === 'Permintaan Vendor'">
+        <div v-if="userRole === 'Purchasing'">
+          <h6 class="section-title">Pilih Vendor yang Diminta Penawaran</h6>
+          <p class="text-secondary text-sm">Tandai vendor mana saja yang akan diminta memberi penawaran untuk tiap barang (belum isi harga). Surat permintaan bisa dicetak per vendor di bawah.</p>
+
+          <div v-for="(it, i) in detail.items" :key="'item-rv-' + i" class="section-box">
+            <table class="table table-sm table-borderless mb-2 info-table">
+              <tbody>
+                <tr>
+                  <td class="text-uppercase text-secondary text-xxs font-weight-bolder" style="width:140px;">Barang</td>
+                  <td><b>{{ it.material_name }}</b></td>
+                </tr>
+                <tr>
+                  <td class="text-uppercase text-secondary text-xxs font-weight-bolder">Qty</td>
+                  <td>{{ it.qty }} {{ it.unit }}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="mb-2">
+              <span v-if="!(it.requested_vendors && it.requested_vendors.length)" class="text-secondary text-sm">Belum ada vendor yang diminta untuk barang ini.</span>
+              <span v-for="rv in it.requested_vendors" :key="'rv-' + rv.id" class="badge bg-secondary me-2 mb-1" style="font-size:12px;">
+                {{ rv.vendor ? rv.vendor.name : '-' }}
+                <a href="javascript:void(0)" style="color:#fff; margin-left:4px;" @click="doUnrequestVendor(it, rv.id)">&times;</a>
+              </span>
+            </div>
+
+            <div class="row g-2" v-if="requestVendorForms[it.id] !== undefined">
+              <div class="col-8">
+                <input class="form-control form-control-sm" list="vendorNameListRv" v-model="requestVendorForms[it.id]" placeholder="Ketik/pilih nama vendor">
+              </div>
+              <div class="col-4"><argon-button color="info" size="sm" @click="doRequestVendor(it)">+ Minta Penawaran</argon-button></div>
+            </div>
+          </div>
+          <datalist id="vendorNameListRv">
+            <option v-for="v in vendors" :key="'rvopt-' + v.id" :value="v.name"></option>
+          </datalist>
+
+          <div class="action-box" v-if="requestedVendorSummary().length">
+            <h6 class="section-title">Cetak Surat Permintaan Penawaran</h6>
+            <p class="text-secondary text-sm">1 surat per vendor, otomatis berisi semua barang yang diminta ke vendor tersebut.</p>
+            <a v-for="v in requestedVendorSummary()" :key="'rfq-' + v.id" class="btn btn-outline-secondary btn-sm me-2 mb-2"
+               :href="apiUrl + 'print-pdf/rfq?spb_id=' + detail.id + '&vendor_id=' + v.id" target="_BLANK">
+              🖨️ Surat untuk {{ v.name }}
+            </a>
+          </div>
+
+          <div class="action-box">
+            <h6 class="section-title">Lanjut ke Tahap Penawaran Harga</h6>
+            <p class="text-secondary text-sm" v-if="!allItemsHaveRequestedVendor()">
+              Semua barang harus punya minimal 1 vendor yang diminta penawaran terlebih dahulu.
+            </p>
+            <argon-button color="success" size="sm" :disabled="!allItemsHaveRequestedVendor()" @click="doLanjutPenawaran()">Lanjut ke Penawaran Harga</argon-button>
+          </div>
+        </div>
+        <p v-else class="text-secondary text-sm">SPPB sedang diproses oleh Purchasing (memilih vendor yang akan diminta penawaran).</p>
+      </div>
+
       <!-- TAHAP: Permintaan Pengadaan (komparasi vendor PER BARANG, khusus Purchasing) -->
       <div v-if="detail.status === 'Permintaan Pengadaan'">
         <div v-if="userRole === 'Purchasing'">
@@ -334,7 +399,10 @@
 
             <div class="row g-2" v-if="itemForms[it.id]">
               <div class="col-4">
-                <input class="form-control form-control-sm" list="vendorNameList" v-model="itemForms[it.id].vendor_name" @input="onItemVendorNameInput(it)" placeholder="Ketik/pilih nama vendor">
+                <select class="form-select form-select-sm" v-model="itemForms[it.id].vendor_id">
+                  <option value="">Pilih vendor yang sudah diminta</option>
+                  <option v-for="rv in (it.requested_vendors || [])" :key="'vopt-' + rv.id" :value="rv.vendor_id">{{ rv.vendor ? rv.vendor.name : '-' }}</option>
+                </select>
               </div>
               <div class="col-3"><input type="text" inputmode="numeric" class="form-control form-control-sm" placeholder="Harga (Rp)" :value="formatRupiah(itemForms[it.id].price)" @input="onCurrencyInput(itemForms[it.id], 'price', $event)"></div>
               <div class="col-3"><input class="form-control form-control-sm" placeholder="Syarat/Catatan" v-model="itemForms[it.id].condition_note"></div>
@@ -350,6 +418,8 @@
             <p class="text-secondary text-sm" v-if="!allItemsHaveSelectedVendor()">
               Semua barang harus punya vendor terpilih terlebih dahulu sebelum bisa lanjut.
             </p>
+            <label class="text-xs text-secondary">Diajukan Oleh (Manager Dept.) <span class="text-danger">*</span></label>
+            <input class="form-control mb-2" placeholder="Nama Manager Dept." v-model="actionForm.diajukan_oleh">
             <textarea class="form-control mb-2" placeholder="Catatan (opsional)" v-model="actionForm.disposisi_note"></textarea>
             <argon-button color="success" size="sm" class="me-2" :disabled="!allItemsHaveSelectedVendor()" @click="doDisposisi(true)">Konfirmasi & Terbitkan PO</argon-button>
             <argon-button color="warning" size="sm" @click="doDisposisi(false)">Belum Ada yang Sesuai</argon-button>
@@ -481,6 +551,7 @@ export default {
       detail: {},
       actionForm: {},
       itemForms: {},
+      requestVendorForms: {},
       poForms: {},
       kategoriList: {
         A: 'Aset', B: 'Consumable', C: 'Sparepart', D: 'Tools',
@@ -512,6 +583,7 @@ export default {
       const map = {
         'Menunggu Approval': { bg: '#fff3cd', color: '#8a6d00' },
         'Ditolak':            { bg: '#fbdcdc', color: '#a71d2a' },
+        'Permintaan Vendor': { bg: '#d4e6ff', color: '#0a4a9e' },
         'Permintaan Pengadaan': { bg: '#ffe4c4', color: '#8a4b00' },
         'Disposisi':          { bg: '#d4ecff', color: '#0b5ed7' },
         'PO Diterbitkan':     { bg: '#e0d9fb', color: '#5b21b6' },
@@ -525,7 +597,8 @@ export default {
     },
     statusLabel(status) {
       const map = {
-        'Permintaan Pengadaan': 'Permintaan / Penawaran ke Vendor',
+        'Permintaan Vendor': 'Permintaan ke Vendor',
+        'Permintaan Pengadaan': 'Penawaran Harga Vendor',
         'Resolusi': 'Receive Material',
       };
       return map[status] || status;
@@ -577,7 +650,7 @@ export default {
       // biarkan specification/unit/actual_stock/min_stock yang sudah diketik manual, jangan direset
     },
     openCreate() {
-      this.newSpb = { divisi: '', items: [] };
+      this.newSpb = { divisi: '', ditinjau_oleh: '', items: [] };
       this.addItemRow();
       this.formCreate.show = true;
     },
@@ -589,6 +662,10 @@ export default {
       if (context.submitting) return;
       if (!context.newSpb.divisi) {
         context.notify('Divisi wajib dipilih', 'error');
+        return;
+      }
+      if (!context.newSpb.ditinjau_oleh) {
+        context.notify('Nama Ditinjau Oleh (Manager Dept.) wajib diisi', 'error');
         return;
       }
       if (context.newSpb.items.length === 0) {
@@ -632,12 +709,65 @@ export default {
       if (!this.detail || !this.detail.items || this.detail.items.length === 0) return false;
       return this.detail.items.every(it => this.itemSelectedVendor(it));
     },
+    allItemsHaveRequestedVendor() {
+      if (!this.detail || !this.detail.items || this.detail.items.length === 0) return false;
+      return this.detail.items.every(it => it.requested_vendors && it.requested_vendors.length > 0);
+    },
+    requestedVendorSummary() {
+      if (!this.detail || !this.detail.items) return [];
+      const map = {};
+      this.detail.items.forEach(it => {
+        (it.requested_vendors || []).forEach(rv => {
+          if (rv.vendor && !map[rv.vendor.id]) {
+            map[rv.vendor.id] = rv.vendor;
+          }
+        });
+      });
+      return Object.values(map);
+    },
+    doRequestVendor(item) {
+      let context = this;
+      const vendorName = context.requestVendorForms[item.id];
+      const vendor = context.vendors.find(v => v.name === vendorName);
+      if (!vendor) {
+        context.notify('Pilih vendor yang valid dari daftar (nama harus cocok persis)', 'error');
+        return;
+      }
+      Api(context, spb.requestVendor(item.id, { vendor_id: vendor.id })).onSuccess(function () {
+        context.notify('Vendor berhasil diminta penawaran', 'success');
+        context.requestVendorForms[item.id] = '';
+        context.refreshDetail();
+      }).onError(function () {
+        context.notify('Gagal meminta penawaran vendor', 'error');
+      }).call();
+    },
+    doUnrequestVendor(item, requestedVendorId) {
+      let context = this;
+      Api(context, spb.unrequestVendor(requestedVendorId)).onSuccess(function () {
+        context.notify('Permintaan vendor dibatalkan', 'success');
+        context.refreshDetail();
+      }).onError(function () {
+        context.notify('Gagal membatalkan permintaan vendor', 'error');
+      }).call();
+    },
+    doLanjutPenawaran() {
+      let context = this;
+      Api(context, spb.lanjutPenawaran(context.detail.id)).onSuccess(function () {
+        context.notify('Lanjut ke tahap Penawaran Harga', 'success');
+        context.refreshDetail();
+      }).onError(function (response) {
+        context.notify((response.data && response.data.message) || 'Gagal lanjut ke tahap penawaran', 'error');
+      }).call();
+    },
     initForms() {
       const itemForms = {};
+      const requestVendorForms = {};
       (this.detail.items || []).forEach(it => {
-        itemForms[it.id] = { vendor_name: '', vendor_id: '', price: '', condition_note: '' };
+        itemForms[it.id] = { vendor_id: '', price: '', condition_note: '' };
+        requestVendorForms[it.id] = '';
       });
       this.itemForms = itemForms;
+      this.requestVendorForms = requestVendorForms;
 
       const poForms = {};
       (this.detail.purchase_orders || []).forEach(po => {
@@ -715,7 +845,11 @@ export default {
     },
     doDisposisi(setuju) {
       let context = this;
-      Api(context, spb.disposisi(context.detail.id, { disposisi: setuju, disposisi_note: context.actionForm.disposisi_note })).onSuccess(function (response) {
+      if (setuju && !context.actionForm.diajukan_oleh) {
+        context.notify('Nama Diajukan Oleh (Manager Dept.) wajib diisi sebelum PO diterbitkan', 'error');
+        return;
+      }
+      Api(context, spb.disposisi(context.detail.id, { disposisi: setuju, diajukan_oleh: context.actionForm.diajukan_oleh, disposisi_note: context.actionForm.disposisi_note })).onSuccess(function (response) {
         context.notify((response.data && response.data.message) || (setuju ? 'PO Berhasil Diterbitkan' : 'Kembali ke Permintaan Pengadaan'), 'success');
         context.refreshDetail();
       }).onError(function () {
