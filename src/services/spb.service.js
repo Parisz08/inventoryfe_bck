@@ -44,4 +44,10 @@ export default {
     delete(id) {
         return Service().post('spb/delete/'+id);
     },
+    saveSignature(id, params) {
+    return Service().post('spb/save-signature/'+id, params);
+   },
+   savePoSignature(poId, params) {
+    return Service().post('spb/purchase-order/save-signature/'+poId, params);
+   },
 }

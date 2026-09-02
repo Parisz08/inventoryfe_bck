@@ -17,7 +17,7 @@
                 <option value="Permintaan Pengadaan">Penawaran Harga Vendor</option>
                 <option>Disposisi</option>
                 <option>PO Diterbitkan</option>
-                <option value="Resolusi">Receive Material</option>
+                <option value="Resolusi">Receipt</option>
                 <option>Invoice</option>
                 <option>Selesai</option>
               </select>
@@ -100,9 +100,24 @@
           </p>
         </div>
         <div class="col-6">
-          <p>Ditinjau Oleh (Manager Dept.): <span class="text-danger">*</span>
-            <input class="form-control" placeholder="Nama Manager Dept." v-model="newSpb.ditinjau_oleh">
+          <p>Barang Dibutuhkan Pada Tanggal: <span class="text-danger">*</span>
+            <input type="date" class="form-control" v-model="newSpb.needed_date">
           </p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12"><p class="mb-1 text-xs font-weight-bold">Tanda Tangan SPPB:</p></div>
+        <div class="col-4">
+          <p class="mb-1">Diajukan Oleh <span class="text-danger">*</span></p>
+          <input class="form-control" placeholder="Nama" v-model="newSpb.sign_diajukan">
+        </div>
+        <div class="col-4">
+          <p class="mb-1">Ditinjau Oleh <span class="text-danger">*</span></p>
+          <input class="form-control" placeholder="Nama" v-model="newSpb.sign_ditinjau">
+        </div>
+        <div class="col-4">
+          <p class="mb-1">Disetujui Oleh <span class="text-danger">*</span></p>
+          <input class="form-control" placeholder="Nama" v-model="newSpb.sign_disetujui">
         </div>
       </div>
       <hr>
@@ -187,7 +202,7 @@
     <div class="row">
       <div class="col-8 float-left"><span class="modal__title">Detail SPPB {{ detail.no_spb }}</span></div>
       <div class="col-3 float-left text-end">
-        <argon-button v-if="detail.status && detail.status !== 'Menunggu Approval'" color="secondary" size="sm" @click="openPrintPreview()">🖨️ Preview / Print</argon-button>
+        <argon-button v-if="detail.status && detail.status !== 'Menunggu Approval'" color="secondary" size="sm" :disabled="!signaturesComplete()" :title="!signaturesComplete() ? 'Isi dan simpan tanda tangan SPPB terlebih dahulu' : ''" @click="openPrintPreview()">🖨️ Preview / Print</argon-button>
       </div>
       <div class="col-1 float-right">
         <i style="cursor: pointer;" class="fa fa-times" aria-hidden="true" @click="formDetail.show = false"></i>
@@ -343,10 +358,10 @@
           <div class="action-box" v-if="requestedVendorSummary().length">
             <h6 class="section-title">Cetak Surat Permintaan Penawaran</h6>
             <p class="text-secondary text-sm">1 surat per vendor, otomatis berisi semua barang yang diminta ke vendor tersebut.</p>
-            <a v-for="v in requestedVendorSummary()" :key="'rfq-' + v.id" class="btn btn-outline-secondary btn-sm me-2 mb-2"
-               :href="apiUrl + 'print-pdf/rfq?spb_id=' + detail.id + '&vendor_id=' + v.id" target="_BLANK">
+            <button v-for="v in requestedVendorSummary()" :key="'rfq-' + v.id"
+                    class="btn btn-outline-secondary btn-sm me-2 mb-2" @click="printRfq(v.id)">
               🖨️ Surat untuk {{ v.name }}
-            </a>
+            </button>
           </div>
 
           <div class="action-box">
@@ -450,7 +465,7 @@
                   <td class="text-uppercase text-secondary text-xxs font-weight-bolder">Status</td>
                   <td>
                     <span class="status-pill" :style="statusPillStyle(po.status)">{{ statusLabel(po.status) }}</span>
-                    <argon-button color="secondary" size="sm" class="ms-2" @click="openPrintPoPreview(po)">🖨️ Preview / Print PO</argon-button>
+                    <argon-button color="secondary" size="sm" class="ms-2" :disabled="!(po.sign_dibuat && po.sign_disetujui)" :title="!(po.sign_dibuat && po.sign_disetujui) ? 'Isi dan simpan tanda tangan PO terlebih dahulu' : ''" @click="openPrintPoPreview(po)">🖨️ Preview / Print PO</argon-button>
                   </td>
                 </tr>
               </tbody>
@@ -462,10 +477,28 @@
               </tbody>
             </table>
 
+            <!-- TANDA TANGAN PO (hilang otomatis kalau sudah tersimpan) -->
+            <div class="mb-3" v-if="signPoForms[po.id] && !(po.sign_dibuat && po.sign_disetujui)">
+              <p class="text-xs font-weight-bold mb-1">Tanda Tangan PO (untuk cetak)</p>
+              <div class="row g-2">
+                <div class="col-5">
+                  <label class="text-xs text-secondary">Dibuat Oleh</label>
+                  <input class="form-control form-control-sm" placeholder="Nama" v-model="signPoForms[po.id].sign_dibuat">
+                </div>
+                <div class="col-5">
+                  <label class="text-xs text-secondary">Disetujui Oleh</label>
+                  <input class="form-control form-control-sm" placeholder="Nama" v-model="signPoForms[po.id].sign_disetujui">
+                </div>
+                <div class="col-2 d-flex align-items-end">
+                  <argon-button color="info" size="sm" @click="savePoSignature(po)">Simpan</argon-button>
+                </div>
+              </div>
+            </div>
+
             <div v-if="po.status === 'PO Diterbitkan'">
               <div v-if="userRole === 'Purchasing'">
-                <textarea class="form-control form-control-sm mb-2" placeholder="Catatan resolusi" v-model="poForms[po.id].resolusi_note"></textarea>
-                <argon-button color="success" size="sm" @click="doResolusiPo(po)">Simpan Resolusi (Barang Diterima)</argon-button>
+                <textarea class="form-control form-control-sm mb-2" placeholder="Catatan Receipt" v-model="poForms[po.id].resolusi_note"></textarea>
+                <argon-button color="success" size="sm" @click="doResolusiPo(po)">Simpan Receipt (Barang Diterima)</argon-button>
               </div>
               <p v-else class="text-secondary text-sm mb-0">Menunggu Purchasing menerima barang.</p>
             </div>
@@ -553,6 +586,8 @@ export default {
       itemForms: {},
       requestVendorForms: {},
       poForms: {},
+      signForm: {},
+      signPoForms: {},
       kategoriList: {
         A: 'Aset', B: 'Consumable', C: 'Sparepart', D: 'Tools',
         E: 'Jasa', F: 'Maintenance', G: 'Stationary', H: 'Lain-lain',
@@ -599,7 +634,7 @@ export default {
       const map = {
         'Permintaan Vendor': 'Permintaan ke Vendor',
         'Permintaan Pengadaan': 'Penawaran Harga Vendor',
-        'Resolusi': 'Receive Material',
+        'Resolusi': 'Receipt',
       };
       return map[status] || status;
     },
@@ -650,7 +685,7 @@ export default {
       // biarkan specification/unit/actual_stock/min_stock yang sudah diketik manual, jangan direset
     },
     openCreate() {
-      this.newSpb = { divisi: '', ditinjau_oleh: '', items: [] };
+      this.newSpb = { divisi: '', needed_date: '', sign_diajukan: '', sign_ditinjau: '', sign_disetujui: '', items: [] };
       this.addItemRow();
       this.formCreate.show = true;
     },
@@ -664,8 +699,12 @@ export default {
         context.notify('Divisi wajib dipilih', 'error');
         return;
       }
-      if (!context.newSpb.ditinjau_oleh) {
-        context.notify('Nama Ditinjau Oleh (Manager Dept.) wajib diisi', 'error');
+      if (!context.newSpb.needed_date) {
+        context.notify('Tanggal barang dibutuhkan wajib diisi', 'error');
+        return;
+      }
+      if (!context.newSpb.sign_diajukan || !context.newSpb.sign_ditinjau || !context.newSpb.sign_disetujui) {
+        context.notify('Nama Diajukan/Ditinjau/Disetujui Oleh wajib diisi', 'error');
         return;
       }
       if (context.newSpb.items.length === 0) {
@@ -770,14 +809,26 @@ export default {
       this.requestVendorForms = requestVendorForms;
 
       const poForms = {};
+      const signPoForms = {};
       (this.detail.purchase_orders || []).forEach(po => {
         poForms[po.id] = {
           resolusi_note: '',
           invoice_number: '', invoice_date: '', invoice_amount: '',
           payment_date: '', payment_amount: '', payment_method: '',
         };
+        signPoForms[po.id] = {
+          sign_dibuat: po.sign_dibuat,
+          sign_disetujui: po.sign_disetujui,
+        };
       });
       this.poForms = poForms;
+      this.signPoForms = signPoForms;
+
+      this.signForm = {
+        sign_diajukan: this.detail.sign_diajukan,
+        sign_ditinjau: this.detail.sign_ditinjau,
+        sign_disetujui: this.detail.sign_disetujui,
+      };
     },
     openDetail(id) {
       let context = this;
@@ -859,10 +910,10 @@ export default {
     doResolusiPo(po) {
       let context = this;
       Api(context, spb.resolusiPo(po.id, context.poForms[po.id])).onSuccess(function () {
-        context.notify('Resolusi Berhasil Disimpan', 'success');
+        context.notify('Receipt Berhasil Disimpan', 'success');
         context.refreshDetail();
       }).onError(function () {
-        context.notify('Gagal Menyimpan Resolusi', 'error');
+        context.notify('Gagal Menyimpan Receipt', 'error');
       }).call();
     },
     doInvoicePo(po) {
@@ -883,13 +934,57 @@ export default {
         context.notify('Gagal Menyimpan Pembayaran', 'error');
       }).call();
     },
+    signaturesComplete() {
+      return !!(this.detail.sign_diajukan && this.detail.sign_ditinjau && this.detail.sign_disetujui);
+    },
+    saveSignature() {
+      let context = this;
+      if (!context.signForm.sign_diajukan || !context.signForm.sign_ditinjau || !context.signForm.sign_disetujui) {
+        context.notify('Semua nama tanda tangan SPPB wajib diisi', 'error');
+        return;
+      }
+      Api(context, spb.saveSignature(context.detail.id, context.signForm)).onSuccess(function () {
+        context.notify('Tanda tangan SPPB berhasil disimpan', 'success');
+        context.refreshDetail();
+      }).onError(function () {
+        context.notify('Gagal menyimpan tanda tangan SPPB', 'error');
+      }).call();
+    },
+    savePoSignature(po) {
+      let context = this;
+      const form = context.signPoForms[po.id];
+      if (!form.sign_dibuat || !form.sign_disetujui) {
+        context.notify('Nama Dibuat Oleh dan Disetujui Oleh wajib diisi', 'error');
+        return;
+      }
+      Api(context, spb.savePoSignature(po.id, form)).onSuccess(function () {
+        context.notify('Tanda tangan PO berhasil disimpan', 'success');
+        context.refreshDetail();
+      }).onError(function () {
+        context.notify('Gagal menyimpan tanda tangan PO', 'error');
+      }).call();
+    },
     openPrintPreview() {
+      let context = this;
+      if (!context.signaturesComplete()) {
+        context.notify('Isi dan simpan tanda tangan SPPB terlebih dahulu', 'error');
+        return;
+      }
       const baseUrl = config.apiUrl.trim().replace(/\/$/, '');
       window.open(baseUrl + '/print-pdf/sppb/' + this.detail.id, '_blank');
     },
     openPrintPoPreview(po) {
+      let context = this;
+      if (!(po.sign_dibuat && po.sign_disetujui)) {
+        context.notify('Isi dan simpan tanda tangan PO terlebih dahulu', 'error');
+        return;
+      }
       const baseUrl = config.apiUrl.trim().replace(/\/$/, '');
       window.open(baseUrl + '/print-pdf/po/' + po.id, '_blank');
+    },
+    printRfq(vendorId) {
+      const baseUrl = config.apiUrl.trim().replace(/\/$/, '');
+      window.open(baseUrl + '/print-pdf/rfq?spb_id=' + this.detail.id + '&vendor_id=' + vendorId, '_blank');
     },
     doDelete(id, noSpb) {
       let context = this;
