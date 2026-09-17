@@ -17,6 +17,9 @@ export default {
     addItemCondition(itemId, params) {
         return Service().post('spb/item-condition/'+itemId, params);
     },
+    updateItemCondition(conditionId, params) {
+        return Service().post('spb/item-condition/update/'+conditionId, params);
+    },
     selectItemCondition(conditionId) {
         return Service().post('spb/item-condition/select/'+conditionId);
     },
@@ -31,6 +34,9 @@ export default {
     },
     disposisi(id, params) {
         return Service().post('spb/disposisi/'+id, params);
+    },
+    mundur(id) {
+        return Service().post('spb/mundur/'+id);
     },
     resolusiPo(poId, params) {
         return Service().post('spb/po/resolusi/'+poId, params);
@@ -49,5 +55,11 @@ export default {
    },
    savePoSignature(poId, params) {
     return Service().post('spb/purchase-order/save-signature/'+poId, params);
+   },
+   updatePoTax(poId, params) {
+    return Service().post('spb/purchase-order/update-tax/'+poId, params);
+   },
+   mundurPo(poId) {
+    return Service().post('spb/purchase-order/mundur/'+poId);
    },
 }
