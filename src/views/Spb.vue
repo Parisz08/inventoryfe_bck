@@ -13,6 +13,7 @@
                 <option value="">Semua Status</option>
                 <option>Menunggu Approval</option>
                 <option>Ditolak</option>
+                <option>Dibatalkan</option>
                 <option value="Permintaan Vendor">Permintaan ke Vendor</option>
                 <option value="Permintaan Pengadaan">Penawaran Harga Vendor</option>
                 <option>Disposisi</option>
@@ -58,7 +59,7 @@
                       <span class="text-secondary text-xs font-weight-bold">{{ row.request_date }}</span>
                     </td>
                     <td class="align-middle text-center">
-                      <span class="text-secondary text-xs font-weight-bold">{{ row.created_by }}</span>
+                      <span class="text-secondary text-xs font-weight-bold">{{ row.sign_diajukan || row.created_by }}</span>
                     </td>
                     <td class="align-middle text-center text-sm">
                       <argon-button color="info" size="xs" variant="gradient" @click="openDetail(row.id)">Detail</argon-button>
@@ -80,7 +81,7 @@
   <!-- ============ MODAL BUAT SPPB BARU ============ -->
   <vue-final-modal v-model="formCreate.show" classes="modal-container" content-class="modal-content-width" :z-index="10000">
     <div class="row">
-      <div class="col-11 float-left"><span class="modal__title">Buat SPPB Baru</span></div>
+      <div class="col-11 float-left"><span class="modal__title">{{ newSpb.editId ? 'Edit SPPB ' + newSpb.no_spb : 'Buat SPPB Baru' }}</span></div>
       <div class="col-1 float-right">
         <i style="cursor: pointer;" class="fa fa-times" aria-hidden="true" @click="formCreate.show = false"></i>
       </div>
@@ -191,7 +192,7 @@
 
       <div class="text-center mt-4">
         <argon-button color="success" variant="gradient" size="sm" :disabled="submitting" @click="submitCreate()">
-          <i class="fa fa-check"></i> {{ submitting ? 'Mengirim...' : 'Ajukan SPPB' }}
+          <i class="fa fa-check"></i> {{ submitting ? 'Mengirim...' : (newSpb.editId ? 'Simpan Perubahan' : 'Ajukan SPPB') }}
         </argon-button>
       </div>
     </div>
@@ -205,7 +206,7 @@
       </div>
       <div class="col-4 float-left"><span class="modal__title">Detail SPPB {{ detail.no_spb }}</span></div>
       <div class="col-3 float-left text-end">
-        <argon-button v-if="detail.status && detail.status !== 'Menunggu Approval'" color="secondary" size="sm" :disabled="!signaturesComplete()" :title="!signaturesComplete() ? 'Isi dan simpan tanda tangan SPPB terlebih dahulu' : ''" @click="openPrintPreview()">Preview / Print</argon-button>
+        <argon-button v-if="detail.status && detail.status !== 'Menunggu Approval' && detail.status !== 'Dibatalkan'" color="secondary" size="sm" :disabled="!signaturesComplete()" :title="!signaturesComplete() ? 'Isi dan simpan tanda tangan SPPB terlebih dahulu' : ''" @click="openPrintPreview()">Preview / Print</argon-button>
       </div>
       <div class="col-1 float-right">
         <i style="cursor: pointer;" class="fa fa-times" aria-hidden="true" @click="formDetail.show = false"></i>
@@ -214,7 +215,7 @@
     <div class="modal__content container" v-if="detail.id">
 
       <!-- STEPPER: alur proses SPPB -->
-      <div class="stepper-wrap" v-if="detail.status !== 'Ditolak'">
+      <div class="stepper-wrap" v-if="detail.status !== 'Ditolak' && detail.status !== 'Dibatalkan'">
         <div class="stepper">
           <div v-for="(label, idx) in stepLabelsList()" :key="idx" class="stepper-step" :class="stepState(idx)">
             <div class="stepper-dot"><i v-if="stepState(idx) === 'done'" class="fa fa-check"></i><span v-else>{{ idx + 1 }}</span></div>
@@ -231,7 +232,7 @@
           <span class="summary-divisi">{{ detail.divisi }}</span>
           <span class="status-pill" :style="statusPillStyle(displayStatusKey(detail, false))">{{ statusLabel(displayStatusKey(detail, false)) }}</span>
         </div>
-        <div class="summary-sub text-secondary text-sm">Diajukan oleh {{ detail.created_by }} · {{ detail.request_date }}</div>
+        <div class="summary-sub text-secondary text-sm">Diajukan oleh {{ detail.sign_diajukan || detail.created_by }} · {{ detail.request_date }}</div>
       </div>
 
       <div class="section-box">
@@ -279,7 +280,7 @@
               <tr>
                 <td><b>Pengajuan SPPB</b></td>
                 <td>-</td>
-                <td>{{ detail.created_by }}</td>
+                <td>{{ detail.sign_diajukan || detail.created_by }}</td>
                 <td>{{ detail.request_date }}</td>
               </tr>
               <tr v-if="detail.approved_by">
@@ -307,7 +308,21 @@
           <argon-button color="success" size="sm" class="me-2" @click="doApprove(true)">Setujui</argon-button>
           <argon-button color="danger" size="sm" @click="doApprove(false)">Tolak</argon-button>
         </div>
+        <div v-else-if="canEditOrCancel(detail)">
+          <p class="text-secondary text-sm mb-2">SPPB ini masih menunggu approval Admin. Anda masih bisa mengedit atau membatalkan pengajuan ini.</p>
+          <argon-button color="warning" size="sm" class="me-2" @click="openEdit(detail)"><i class="fa fa-pencil-alt"></i> Edit SPPB</argon-button>
+          <argon-button color="secondary" size="sm" @click="doCancelSpb(detail)"><i class="fa fa-ban"></i> Batalkan SPPB</argon-button>
+        </div>
         <p v-else class="text-secondary text-sm mb-0">Menunggu approval dari Admin/atasan.</p>
+      </div>
+
+      <!-- TAHAP: Dibatalkan -->
+      <div v-if="detail.status === 'Dibatalkan'" class="section-box">
+        <table class="table table-sm table-borderless mb-0">
+          <tbody>
+            <tr><td class="text-secondary" style="width:160px;"><b>SPPB Dibatalkan</b></td><td>Oleh {{ detail.cancelled_by || '-' }}</td></tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- TAHAP: Ditolak -->
@@ -786,11 +801,27 @@ export default {
       return pairs;
     },
   },
+  // Kalau user klik notifikasi PAS lagi udah di halaman SPPB (bukan pindah dari halaman
+  // lain), Vue Router cuma ganti query di URL tanpa remount komponen ini, jadi mounted()
+  // gak kepanggil ulang. Di-watch di sini supaya tetap kebuka otomatis di kedua kasus.
+  watch: {
+    '$route.query.open'(newId) {
+      if (newId) {
+        this.openDetail(newId);
+      }
+    },
+  },
   mounted() {
     this.get();
     this.getRole();
     this.getVendors();
     this.getStockList();
+    // Kalau dibuka dari klik notifikasi (?open=ID), langsung tampilkan detail SPPB-nya
+    // supaya user gak perlu cari manual di daftar.
+    const openId = this.$route.query.open;
+    if (openId) {
+      this.openDetail(openId);
+    }
   },
   methods: {
     notify(message, type) {
@@ -800,6 +831,7 @@ export default {
       const map = {
         'Menunggu Approval': { bg: '#fff3cd', color: '#8a6d00' },
         'Ditolak':            { bg: '#fbdcdc', color: '#a71d2a' },
+        'Dibatalkan':         { bg: '#e9ecef', color: '#495057' },
         'Permintaan Vendor': { bg: '#d4e6ff', color: '#0a4a9e' },
         'Permintaan Pengadaan': { bg: '#ffe4c4', color: '#8a4b00' },
         'Disposisi':          { bg: '#d4ecff', color: '#0b5ed7' },
@@ -833,6 +865,7 @@ export default {
         return record.status;
       }
       if (!isPo && record.status === 'Ditolak') return 'Ditolak';
+      if (!isPo && record.status === 'Dibatalkan') return 'Dibatalkan';
       // Kartu PO sendiri gak pernah ditampilkan detail ke user biasa, jadi begitu
       // PO ada (apapun status internalnya), dianggap Selesai — konsisten dengan
       // status utama di atas, gak kontradiksi.
@@ -908,9 +941,72 @@ export default {
       // biarkan specification/unit/actual_stock/min_stock yang sudah diketik manual, jangan direset
     },
     openCreate() {
-      this.newSpb = { divisi: '', needed_date: '', sign_diajukan: '', sign_ditinjau: '', sign_disetujui: '', items: [] };
+      this.newSpb = { editId: null, no_spb: '', divisi: '', needed_date: '', sign_diajukan: '', sign_ditinjau: '', sign_disetujui: '', items: [] };
       this.addItemRow();
       this.formCreate.show = true;
+    },
+    // ==== EDIT / BATAL SPPB (sebelum di-approve) ====
+    // Hanya boleh dilakukan oleh SI PENGAJU sendiri (bukan Admin/Purchasing), dan hanya
+    // selama status masih "Menunggu Approval". Pengecekan di sini cuma untuk kontrol
+    // tampil/sembunyi tombol di FE — otorisasi yang beneran tetap divalidasi di backend.
+    canEditOrCancel(row) {
+      if (!row || row.status !== 'Menunggu Approval') return false;
+      if (!this.isRequesterView()) return false; // Admin/Purchasing edit lewat alur approval/pengadaan, bukan di sini
+      const myName = localStorage.getItem('username');
+      return !!myName && row.created_by === myName;
+    },
+    openEdit(row) {
+      let context = this;
+      // Kalau dipanggil dari dalam modal Detail (klik "Edit SPPB" di sana), modal Detail
+      // harus ditutup dulu SEBELUM modal Edit dibuka. Kalau enggak, dua modal numpuk
+      // barengan (Detail masih tampil DI ATAS Edit), jadi kelihatan kayak "macet" —
+      // padahal modal Edit-nya udah kebuka, cuma ketutup modal Detail yang belum hilang.
+      context.formDetail.show = false;
+      Api(context, spb.show(row.id)).onSuccess(function (response) {
+        const data = response.data.data;
+        context.newSpb = {
+          editId: data.id,
+          no_spb: data.no_spb,
+          divisi: data.divisi || '',
+          needed_date: data.needed_date || '',
+          keperluan: data.keperluan || '',
+          sign_diajukan: data.sign_diajukan || '',
+          sign_ditinjau: data.sign_ditinjau || '',
+          sign_disetujui: data.sign_disetujui || '',
+          items: (data.items || []).map(it => ({
+            material_name: it.material_name || '',
+            material_code: it.material_code || '',
+            kategori: it.kategori || '',
+            merek: it.merek || '',
+            specification: it.specification || '',
+            qty: it.qty,
+            unit: it.unit || '',
+            note: it.note || '',
+            actual_stock: it.actual_stock ?? '',
+            min_stock: it.min_stock ?? '',
+          })),
+        };
+        if (context.newSpb.items.length === 0) {
+          context.addItemRow();
+        }
+        context.formCreate.show = true;
+      }).onError(function () {
+        context.notify('Gagal mengambil data SPPB untuk diedit', 'error');
+      }).call();
+    },
+    doCancelSpb(row) {
+      let context = this;
+      if (!confirm('Yakin mau membatalkan SPPB ' + row.no_spb + '? SPPB yang sudah dibatalkan tidak bisa diproses lagi.')) return;
+      Api(context, spb.cancel(row.id)).onSuccess(function () {
+        context.notify('SPPB Berhasil Dibatalkan', 'success');
+        context.get();
+        if (context.formDetail.show && context.detail.id === row.id) {
+          context.refreshDetail();
+        }
+      }).onError(function (error) {
+        const msg = error?.response?.data?.message || 'Gagal membatalkan SPPB';
+        context.notify(msg, 'error');
+      }).call();
     },
     addItemRow() {
       this.newSpb.items.push({ material_name: '', material_code: '', kategori: '', merek: '', specification: '', qty: 1, unit: '', note: '', actual_stock: '', min_stock: '' });
@@ -942,13 +1038,19 @@ export default {
         }
       }
       context.submitting = true;
-      Api(context, spb.create(context.newSpb)).onSuccess(function () {
-        context.notify('SPPB Berhasil Diajukan', 'success');
+      const isEdit = !!context.newSpb.editId;
+      const request = isEdit ? spb.update(context.newSpb.editId, context.newSpb) : spb.create(context.newSpb);
+      Api(context, request).onSuccess(function () {
+        context.notify(isEdit ? 'SPPB Berhasil Diubah' : 'SPPB Berhasil Diajukan', 'success');
         context.formCreate.show = false;
         context.submitting = false;
         context.get();
-      }).onError(function () {
-        context.notify('Gagal Mengajukan SPPB', 'error');
+        if (isEdit && context.formDetail.show && context.detail.id === context.newSpb.editId) {
+          context.refreshDetail();
+        }
+      }).onError(function (error) {
+        const msg = error?.response?.data?.message || (isEdit ? 'Gagal Mengubah SPPB' : 'Gagal Mengajukan SPPB');
+        context.notify(msg, 'error');
         context.submitting = false;
       }).call();
     },

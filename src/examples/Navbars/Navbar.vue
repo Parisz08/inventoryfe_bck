@@ -54,129 +54,75 @@
               <i class="cursor-pointer fa fa-cog fixed-plugin-button-nav"></i>
             </a>
           </li> -->
-          <!-- <li
+          <li
             class="nav-item dropdown d-flex align-items-center"
             :class="this.$store.state.isRTL ? 'ps-2' : 'pe-2'"
           >
             <a
               href="#"
-              class="p-0 nav-link text-white"
+              class="p-0 nav-link text-white position-relative"
               :class="[showMenu ? 'show' : '']"
               id="dropdownMenuButton"
               data-bs-toggle="dropdown"
               aria-expanded="false"
-              @click="showMenu = !showMenu"
+              @click="toggleNotifications()"
             >
               <i class="cursor-pointer fa fa-bell"></i>
+              <span
+                v-if="unreadCount > 0"
+                class="badge badge-sm bg-gradient-danger border-radius-lg position-absolute"
+                style="top: -6px; right: -8px; font-size: 10px; padding: 2px 5px;"
+              >{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
             </a>
             <ul
               class="px-2 py-3 dropdown-menu dropdown-menu-end me-sm-n4"
               :class="showMenu ? 'show' : ''"
               aria-labelledby="dropdownMenuButton"
+              style="min-width: 340px; max-height: 420px; overflow-y: auto;"
             >
-              <li class="mb-2">
-                <a class="dropdown-item border-radius-md" href="javascript:;">
+              <li class="d-flex justify-content-between align-items-center px-2 mb-2">
+                <h6 class="mb-0 text-dark">Notifikasi</h6>
+                <a
+                  v-if="unreadCount > 0"
+                  href="javascript:;"
+                  class="text-xs text-primary"
+                  @click.stop="markAllRead()"
+                >Tandai semua dibaca</a>
+              </li>
+              <li v-if="notifications.length === 0" class="px-2">
+                <p class="text-xs text-secondary mb-1">Belum ada notifikasi.</p>
+              </li>
+              <li v-for="n in notifications" :key="n.id" class="mb-1">
+                <a
+                  class="dropdown-item border-radius-md"
+                  href="javascript:;"
+                  :style="!n.is_read ? 'background-color:#f0f6ff;' : ''"
+                  @click="openNotification(n)"
+                >
                   <div class="py-1 d-flex">
                     <div class="my-auto">
-                      <img
-                        src="../../assets/img/team-2.jpg"
-                        class="avatar avatar-sm me-3"
-                        alt="user image"
-                      />
+                      <i
+                        class="fa avatar avatar-sm me-3 d-flex align-items-center justify-content-center"
+                        :class="notifIcon(n.type)"
+                        style="background-color:#e9ecef; color:#344767; border-radius:50%;"
+                      ></i>
                     </div>
                     <div class="d-flex flex-column justify-content-center">
                       <h6 class="mb-1 text-sm font-weight-normal">
-                        <span class="font-weight-bold">New message</span> from
-                        Laur
+                        <span v-if="!n.is_read" class="unread-dot" title="Belum dibaca"></span>
+                        <span class="font-weight-bold">{{ n.title }}</span>
                       </h6>
+                      <p class="mb-0 text-xs text-secondary">{{ n.message }}</p>
                       <p class="mb-0 text-xs text-secondary">
                         <i class="fa fa-clock me-1"></i>
-                        13 minutes ago
-                      </p>
-                    </div>
-                  </div>
-                </a>
-              </li>
-              <li class="mb-2">
-                <a class="dropdown-item border-radius-md" href="javascript:;">
-                  <div class="py-1 d-flex">
-                    <div class="my-auto">
-                      <img
-                        src="../../assets/img/small-logos/logo-spotify.svg"
-                        class="avatar avatar-sm bg-gradient-dark me-3"
-                        alt="logo spotify"
-                      />
-                    </div>
-                    <div class="d-flex flex-column justify-content-center">
-                      <h6 class="mb-1 text-sm font-weight-normal">
-                        <span class="font-weight-bold">New album</span> by
-                        Travis Scott
-                      </h6>
-                      <p class="mb-0 text-xs text-secondary">
-                        <i class="fa fa-clock me-1"></i>
-                        1 day
-                      </p>
-                    </div>
-                  </div>
-                </a>
-              </li>
-              <li>
-                <a class="dropdown-item border-radius-md" href="javascript:;">
-                  <div class="py-1 d-flex">
-                    <div
-                      class="my-auto avatar avatar-sm bg-gradient-secondary me-3"
-                    >
-                      <svg
-                        width="12px"
-                        height="12px"
-                        viewBox="0 0 43 36"
-                        version="1.1"
-                        xmlns="http://www.w3.org/2000/svg"
-                        xmlns:xlink="http://www.w3.org/1999/xlink"
-                      >
-                        <title>credit-card</title>
-                        <g
-                          stroke="none"
-                          stroke-width="1"
-                          fill="none"
-                          fill-rule="evenodd"
-                        >
-                          <g
-                            transform="translate(-2169.000000, -745.000000)"
-                            fill="#FFFFFF"
-                            fill-rule="nonzero"
-                          >
-                            <g transform="translate(1716.000000, 291.000000)">
-                              <g transform="translate(453.000000, 454.000000)">
-                                <path
-                                  class="color-background"
-                                  d="M43,10.7482083 L43,3.58333333 C43,1.60354167 41.3964583,0 39.4166667,0 L3.58333333,0 C1.60354167,0 0,1.60354167 0,3.58333333 L0,10.7482083 L43,10.7482083 Z"
-                                  opacity="0.593633743"
-                                />
-                                <path
-                                  class="color-background"
-                                  d="M0,16.125 L0,32.25 C0,34.2297917 1.60354167,35.8333333 3.58333333,35.8333333 L39.4166667,35.8333333 C41.3964583,35.8333333 43,34.2297917 43,32.25 L43,16.125 L0,16.125 Z M19.7083333,26.875 L7.16666667,26.875 L7.16666667,23.2916667 L19.7083333,23.2916667 L19.7083333,26.875 Z M35.8333333,26.875 L28.6666667,26.875 L28.6666667,23.2916667 L35.8333333,23.2916667 L35.8333333,26.875 Z"
-                                />
-                              </g>
-                            </g>
-                          </g>
-                        </g>
-                      </svg>
-                    </div>
-                    <div class="d-flex flex-column justify-content-center">
-                      <h6 class="mb-1 text-sm font-weight-normal">
-                        Payment successfully completed
-                      </h6>
-                      <p class="mb-0 text-xs text-secondary">
-                        <i class="fa fa-clock me-1"></i>
-                        2 days
+                        {{ timeAgo(n.created_at) }}
                       </p>
                     </div>
                   </div>
                 </a>
               </li>
             </ul>
-          </li> -->
+          </li>
           <li class="nav-item d-flex align-items-center text-white">
             <!-- <i class="fa fa-user" ></i> -->
             <span class="d-sm-inline d-none ms-sm-2 me-sm-2">Hallo {{ full_name }}</span>
@@ -192,6 +138,7 @@
 import { mapMutations, mapActions } from "vuex";
 import Api from '@/helpers/api';
 import akun from '@/services/akun.service';
+import notification from '@/services/notification.service';
 
 export default {
   name: "navbar",
@@ -199,6 +146,9 @@ export default {
     return {
       showMenu: false,
       full_name: '',
+      notifications: [],
+      unreadCount: 0,
+      pollTimer: null,
     };
   },
   props: ["minNav", "textWhite"],
@@ -207,6 +157,17 @@ export default {
   },
   mounted() {
     this.getRole();
+    this.getUnreadCount();
+    // Polling ringan tiap 20 detik supaya badge notifikasi update otomatis tanpa
+    // harus reload halaman — user gak perlu buka & cek manual apakah ada progress baru.
+    this.pollTimer = setInterval(() => {
+      this.getUnreadCount();
+    }, 20000);
+    document.addEventListener('click', this.handleOutsideClick);
+  },
+  beforeUnmount() {
+    if (this.pollTimer) clearInterval(this.pollTimer);
+    document.removeEventListener('click', this.handleOutsideClick);
   },
   methods: {
     ...mapMutations(["navbarMinimize", "toggleConfigurator"]),
@@ -230,6 +191,80 @@ export default {
       })
       .call() 
     },
+    getUnreadCount() {
+      let context = this;
+      Api(context, notification.unreadCount()).onSuccess(function (response) {
+        context.unreadCount = response.data.data.unread_count;
+      }).onError(function (error) {
+        console.error('Gagal ambil unread count notifikasi:', error?.response?.data || error);
+      }).call();
+    },
+    getNotifications() {
+      let context = this;
+      Api(context, notification.index({ per_page: 15 })).onSuccess(function (response) {
+        context.notifications = response.data.data.data;
+      }).onError(function (error) {
+        console.error('Gagal ambil daftar notifikasi:', error?.response?.data || error);
+      }).call();
+    },
+    toggleNotifications() {
+      this.showMenu = !this.showMenu;
+      if (this.showMenu) {
+        this.getNotifications();
+      }
+    },
+    handleOutsideClick(event) {
+      if (this.showMenu && this.$el && !this.$el.contains(event.target)) {
+        this.showMenu = false;
+      }
+    },
+    openNotification(n) {
+      let context = this;
+      if (!n.is_read) {
+        Api(context, notification.markRead(n.id)).onSuccess(function () {
+          n.is_read = true;
+          context.getUnreadCount();
+        }).onError(function () {}).call();
+      }
+      this.showMenu = false;
+      if (n.spb_id) {
+        this.$router.push({ path: '/spb', query: { open: n.spb_id } });
+      }
+    },
+    markAllRead() {
+      let context = this;
+      Api(context, notification.markAllRead()).onSuccess(function () {
+        context.notifications.forEach(n => { n.is_read = true; });
+        context.unreadCount = 0;
+      }).onError(function () {}).call();
+    },
+    notifIcon(type) {
+      const map = {
+        spb_created:   'fa-file-alt',
+        spb_updated:   'fa-pencil-alt',
+        spb_cancelled: 'fa-ban',
+        spb_approved:  'fa-check-circle',
+        spb_rejected:  'fa-times-circle',
+        po_issued:     'fa-file-invoice',
+        po_received:   'fa-box-open',
+        po_invoiced:   'fa-receipt',
+        po_paid:       'fa-money-bill-wave',
+        spb_selesai:   'fa-flag-checkered',
+      };
+      return map[type] || 'fa-bell';
+    },
+    timeAgo(dateStr) {
+      if (!dateStr) return '';
+      const then = new Date(dateStr.replace(' ', 'T'));
+      const diffMs = Date.now() - then.getTime();
+      const mins = Math.floor(diffMs / 60000);
+      if (mins < 1) return 'Baru saja';
+      if (mins < 60) return mins + ' menit lalu';
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return hours + ' jam lalu';
+      const days = Math.floor(hours / 24);
+      return days + ' hari lalu';
+    },
   },
   components: {
     // Breadcrumbs
@@ -241,3 +276,14 @@ export default {
   }
 };
 </script>
+<style scoped>
+.unread-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ea0606;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+</style>

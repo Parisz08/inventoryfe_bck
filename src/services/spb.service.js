@@ -11,6 +11,12 @@ export default {
     create(params) {
         return Service().post('spb/create', params);
     },
+    update(id, params) {
+        return Service().post('spb/update/'+id, params);
+    },
+    cancel(id) {
+        return Service().post('spb/cancel/'+id);
+    },
     approve(id, params) {
         return Service().post('spb/approve/'+id, params);
     },
