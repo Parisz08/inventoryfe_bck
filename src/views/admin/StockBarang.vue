@@ -1,5 +1,22 @@
 <template>
   <div class="py-4 container-fluid">
+    <div class="mb-3">
+      <argon-button
+        :variant="activeTab === 'barang' ? 'gradient' : 'outline'"
+        color="dark"
+        size="sm"
+        class="me-2"
+        @click="activeTab = 'barang'"
+      >Barang</argon-button>
+      <argon-button
+        :variant="activeTab === 'vendor' ? 'gradient' : 'outline'"
+        color="dark"
+        size="sm"
+        @click="switchToVendorTab()"
+      >Vendor</argon-button>
+    </div>
+
+    <div v-if="activeTab === 'barang'">
     <a class="btn btn-sm btn-primary" style="margin-right: 10px;" :href="apiUrl+'export-excel/stock-barang?material_code='+search.material_code+'&material_name='+search.material_name+'&type='+search.type+'&unit='+search.unit+'&storage_location='+search.storage_location+'&date='+search.date+''" target="_BLANK"><i class="fa fa-download fa-sm"></i> Export</a>
     <a class="btn btn-sm btn-warning" style="margin-left: 0px;" :href="apiUrl+'print-pdf/stock-barang-qr-code?material_code='+search.material_code+'&material_name='+search.material_name+'&type='+search.type+'&unit='+search.unit+'&storage_location='+search.storage_location+''" target="_BLANK"><i class="fa fa-qrcode fa-sm"></i> Print QR Code</a>
     <div class=" row">
@@ -131,6 +148,106 @@
               </div> -->
             </div>
           </div>
+      </div>
+    </div>
+    </div>
+
+    <div v-if="activeTab === 'vendor'">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="row">
+              <div class="col-4">
+                <div class="card-header pb-0">
+                  <h6>Master Data - Vendor</h6>
+                </div>
+              </div>
+              <div class="col-4"></div>
+              <div class="col-4 float-right">
+                <argon-button
+                  class="mt-4"
+                  variant="gradient"
+                  color="success"
+                  size="sm"
+                  @click="createVendor()"
+                ><i class="fa fa-plus fa-sm" aria-hidden="true"></i> Tambah Vendor</argon-button>
+              </div>
+            </div>
+
+            <div class="row px-3">
+              <div class="col-12 col-md-5">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Cari vendor (nama, PIC, produk, telepon, email)..."
+                  v-model="vendorSearch"
+                >
+              </div>
+            </div>
+
+            <div class="card-body px-0 pt-0 pb-2 mt-4">
+              <div class="table-responsive p-0 scroll">
+                <table class="table align-items-center mb-0">
+                  <thead>
+                    <tr>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">No</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Nama Vendor</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Produk/Barang</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">PIC</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Telepon</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Email</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Termin Bayar</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Alamat</th>
+                      <th class="text-secondary"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-if="vendorTable.data.length === 0">
+                      <td colspan="9" class="text-center text-secondary text-sm py-3">
+                        Belum ada vendor. Vendor juga otomatis tersimpan di sini kalau diinput baru lewat tahap "Permintaan Vendor" di SPPB.
+                      </td>
+                    </tr>
+                    <tr v-else-if="filteredVendors.length === 0">
+                      <td colspan="9" class="text-center text-secondary text-sm py-3">
+                        Tidak ada vendor yang cocok dengan pencarian "{{ vendorSearch }}".
+                      </td>
+                    </tr>
+                    <tr v-for="(row, i) in filteredVendors" :key="row.id">
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs font-weight-bold">{{ i + 1 }}</span>
+                      </td>
+                      <td class="align-middle text-center">
+                        <span class="text-dark text-xs font-weight-bold">{{ row.name }}</span>
+                      </td>
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs">{{ row.product || '-' }}</span>
+                      </td>
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs">{{ row.pic || '-' }}</span>
+                      </td>
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs">{{ row.phone || '-' }}</span>
+                      </td>
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs">{{ row.email || '-' }}</span>
+                      </td>
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs">{{ row.payment_term || '-' }}</span>
+                      </td>
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs">{{ row.address || '-' }}</span>
+                      </td>
+                      <td class="align-middle text-center">
+                        <i class="fas fa-edit fa-sm" aria-hidden="true" style="cursor: pointer; margin-right: 20px;" @click="editVendor(row.id)" title="Edit"></i>
+                        <i class="fa fa-trash-o fa-sm" aria-hidden="true" title="Hapus" style="cursor: pointer;" @click="removeVendor(row.id)"></i>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -282,6 +399,47 @@
     </vue-final-modal>
    </div>
 
+  <!-- =======  MODAL ADD/EDIT VENDOR ======= -->
+  <div class="container">
+    <vue-final-modal v-model="vendorForm.show" classes="modal-container" content-class="modal-content" :z-index="10000">
+      <div class="row">
+        <div class="col-11 float-left">
+          <span class="modal__title">{{ vendorForm.title }}</span>
+        </div>
+        <div class="col-1 float-right">
+          <i style="cursor: pointer;" class="fa fa-times" aria-hidden="true" @click="vendorForm.show = false"></i>
+        </div>
+      </div><hr>
+      <div class="modal__content container">
+        <label class="form-control-label mt-3">Nama Vendor <span style="color: red;">*</span></label>
+        <input type="text" class="form-control" placeholder="Nama Vendor" v-model="dataVendor.name">
+
+        <label class="form-control-label mt-3">Produk/Barang yang Ditawarkan</label>
+        <input type="text" class="form-control" placeholder="misal: Sparepart mesin, ATK, dll" v-model="dataVendor.product">
+
+        <label class="form-control-label mt-3">PIC (Contact Person)</label>
+        <input type="text" class="form-control" placeholder="Nama PIC" v-model="dataVendor.pic">
+
+        <label class="form-control-label mt-3">Telepon</label>
+        <input type="text" class="form-control" placeholder="No. Telepon" v-model="dataVendor.phone">
+
+        <label class="form-control-label mt-3">Email</label>
+        <input type="email" class="form-control" placeholder="Email" v-model="dataVendor.email">
+
+        <label class="form-control-label mt-3">Termin Pembayaran</label>
+        <input type="text" class="form-control" placeholder="misal: NET 30, Cash, dll" v-model="dataVendor.payment_term">
+
+        <label class="form-control-label mt-3">Alamat</label>
+        <textarea class="form-control" placeholder="Alamat" v-model="dataVendor.address"></textarea>
+      </div><hr>
+      <div class="row">
+        <div class="col-12 text-center">
+          <argon-button variant="gradient" color="success" size="sm" @click="saveVendor()">Simpan</argon-button>
+        </div>
+      </div>
+    </vue-final-modal>
+  </div>
+
 </template>
 
 <script>
@@ -297,6 +455,7 @@ var moment = require('moment');
 import stockBarang from '@/services/stockBarang.service';
 import barangMasuk from '@/services/barangMasuk.service';
 import akun from '@/services/akun.service';
+import vendor from '@/services/vendor.service';
 
 export default {
   name: "tables",
@@ -335,7 +494,25 @@ export default {
       },
       apiUrl :config.apiUrl,
       role: '',
+      activeTab: 'barang',
+      vendorTable: { data: [] },
+      vendorForm: { show: false, title: 'Tambah Vendor' },
+      dataVendor: {},
+      vendorLoaded: false,
+      vendorSearch: '',
     };
+  },
+  computed: {
+    filteredVendors() {
+      const keyword = this.vendorSearch.trim().toLowerCase();
+      if (!keyword) {
+        return this.vendorTable.data;
+      }
+      return this.vendorTable.data.filter((row) => {
+        return [row.name, row.product, row.pic, row.phone, row.email, row.payment_term, row.address]
+          .some((field) => (field || '').toString().toLowerCase().includes(keyword));
+      });
+    },
   },
   mounted(){
     this.get();
@@ -478,6 +655,70 @@ export default {
         }else{
           return bilangan
         }
+      }
+    },
+    // ==== TAB VENDOR (Master Data) ====
+    switchToVendorTab() {
+      this.activeTab = 'vendor';
+      if (!this.vendorLoaded) {
+        this.getVendorList();
+      }
+    },
+    getVendorList() {
+      let context = this;
+      Api(context, vendor.index()).onSuccess(function (response) {
+        context.vendorTable.data = response.data.data;
+        context.vendorLoaded = true;
+      }).onError(function () {
+        context.notify('Gagal mengambil daftar vendor', 'error');
+      }).call();
+    },
+    createVendor() {
+      this.dataVendor        = {};
+      this.vendorForm.title  = 'Tambah Vendor';
+      this.vendorForm.show   = true;
+    },
+    editVendor(id) {
+      let context = this;
+      Api(context, vendor.show(id)).onSuccess(function (response) {
+        context.dataVendor        = response.data.data;
+        context.vendorForm.title  = 'Edit Vendor';
+        context.vendorForm.show   = true;
+      }).onError(function () {
+        context.notify('Gagal mengambil data vendor', 'error');
+      }).call();
+    },
+    saveVendor() {
+      let context = this;
+      if (!context.dataVendor.name) {
+        return alert('Nama Vendor wajib diisi');
+      }
+
+      const isEdit = context.vendorForm.title === 'Edit Vendor';
+      const request = isEdit
+        ? vendor.update(context.dataVendor.id, context.dataVendor)
+        : vendor.create(context.dataVendor);
+
+      Api(context, request).onSuccess(function () {
+        context.vendorForm.show = false;
+        context.getVendorList();
+        context.notify(isEdit ? 'Vendor Berhasil Diubah' : 'Vendor Berhasil Ditambahkan', 'success');
+      }).onError(function (error) {
+        const msg = error?.response?.data?.message || 'Gagal menyimpan data vendor';
+        context.notify(msg, 'error');
+      }).call();
+    },
+    removeVendor(id) {
+      var r = confirm("Anda yakin ingin menghapus vendor ini?");
+      if (r == true) {
+        let context = this;
+        Api(context, vendor.delete(id)).onSuccess(function () {
+          context.getVendorList();
+          context.notify('Vendor Berhasil Dihapus', 'success');
+        }).onError(function (error) {
+          const msg = error?.response?.data?.message || 'Gagal menghapus vendor';
+          context.notify(msg, 'error');
+        }).call();
       }
     },
   }

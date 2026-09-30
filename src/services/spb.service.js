@@ -5,6 +5,9 @@ export default {
     index(params) {
         return Service().get('spb/index', {params});
     },
+    searchPo(poNumber) {
+        return Service().get('spb/po/search', {params: {po_number: poNumber}});
+    },
     show(id) {
         return Service().get('spb/show/'+id);
     },

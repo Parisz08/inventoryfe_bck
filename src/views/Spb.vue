@@ -8,7 +8,18 @@
               <h6 class="mb-0">Data SPPB</h6>
               <p class="text-secondary text-sm mb-0">Surat Permohonan Permintaan Barang</p>
             </div>
-            <div class="d-flex align-items-center" style="gap: 10px;">
+            <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
+              <div class="d-flex align-items-center" style="gap: 4px;">
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  style="width: 180px;"
+                  placeholder="Cari No. PO..."
+                  v-model="poSearchKeyword"
+                  @keyup.enter="searchPo()"
+                >
+                <argon-button variant="outline" color="dark" size="sm" @click="searchPo()"><i class="fa fa-search"></i></argon-button>
+              </div>
               <select class="form-select" style="width: 220px;" v-model="search.status" @change="get()">
                 <option value="">Semua Status</option>
                 <option>Menunggu Approval</option>
@@ -31,6 +42,39 @@
             </div>
           </div>
 
+          <!-- HASIL PENCARIAN PO (by No. PO, lintas semua SPPB) -->
+          <div class="po-search-results mx-3 mt-3" v-if="poSearchKeyword && (poSearchResults.length > 0 || poSearchDone)">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-sm font-weight-bold text-secondary">Hasil pencarian PO "{{ poSearchKeyword }}"</span>
+              <i class="fa fa-times" style="cursor: pointer;" @click="clearPoSearch()" title="Tutup"></i>
+            </div>
+            <div v-if="poSearchResults.length === 0" class="text-secondary text-sm">Tidak ada PO dengan nomor tersebut.</div>
+            <table v-else class="table table-sm align-items-center mb-0">
+              <thead>
+                <tr>
+                  <th class="text-xs text-secondary">No. PO</th>
+                  <th class="text-xs text-secondary">Vendor</th>
+                  <th class="text-xs text-secondary">Status PO</th>
+                  <th class="text-xs text-secondary">Dari SPPB</th>
+                  <th class="text-xs text-secondary">Tanggal PO</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="po in poSearchResults" :key="po.id">
+                  <td class="text-sm font-weight-bold">{{ po.po_number }}{{ po.po_number_suffix ? '/' + po.po_number_suffix : '' }}</td>
+                  <td class="text-sm">{{ po.supplier || (po.vendor ? po.vendor.name : '-') }}</td>
+                  <td class="text-sm">{{ po.status }}</td>
+                  <td class="text-sm">{{ po.spb ? po.spb.no_spb : '-' }}</td>
+                  <td class="text-sm">{{ po.po_date }}</td>
+                  <td>
+                    <argon-button color="info" size="xs" variant="gradient" @click="openPoResult(po)">Lihat SPPB</argon-button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
           <div class="card-body px-0 pt-0 pb-2 mt-4">
             <div class="table-responsive p-0 scroll">
               <table class="table align-items-center mb-0">
@@ -40,6 +84,7 @@
                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Divisi</th>
                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Status</th>
                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Tanggal</th>
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Barang Dibutuhkan</th>
                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Dibuat Oleh</th>
                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Aksi</th>
                   </tr>
@@ -59,6 +104,13 @@
                       <span class="text-secondary text-xs font-weight-bold">{{ row.request_date }}</span>
                     </td>
                     <td class="align-middle text-center">
+                      <span class="text-xs font-weight-bold" :class="isNeededDateOverdue(row) ? 'text-danger' : 'text-secondary'">
+                        {{ row.needed_date || '-' }}
+                        <br v-if="isNeededDateOverdue(row)">
+                        <span v-if="isNeededDateOverdue(row)" class="badge badge-sm bg-gradient-danger">Lewat, perlu update</span>
+                      </span>
+                    </td>
+                    <td class="align-middle text-center">
                       <span class="text-secondary text-xs font-weight-bold">{{ row.sign_diajukan || row.created_by }}</span>
                     </td>
                     <td class="align-middle text-center text-sm">
@@ -67,7 +119,7 @@
                     </td>
                   </tr>
                   <tr v-if="table.data.length === 0">
-                    <td colspan="6" class="text-center text-sm text-secondary py-3">Belum ada data SPPB</td>
+                    <td colspan="7" class="text-center text-sm text-secondary py-3">Belum ada data SPPB</td>
                   </tr>
                 </tbody>
               </table>
@@ -202,7 +254,7 @@
   <vue-final-modal v-model="formDetail.show" classes="modal-container" content-class="modal-content-width" :z-index="10000">
     <div class="row">
       <div class="col-4 float-left">
-        <argon-button v-if="canMundurToVendor()" color="secondary" size="sm" title="Mundur ke Finalisasi Vendor" @click="doMundurSpbToVendor()"><i class="fa fa-arrow-left"></i></argon-button>
+        <argon-button v-if="canMundurTahap()" color="secondary" size="sm" :title="mundurTahapTitle()" @click="doMundurTahap()"><i class="fa fa-arrow-left"></i></argon-button>
       </div>
       <div class="col-4 float-left"><span class="modal__title">Detail SPPB {{ detail.no_spb }}</span></div>
       <div class="col-3 float-left text-end">
@@ -309,8 +361,13 @@
           <argon-button color="danger" size="sm" @click="doApprove(false)">Tolak</argon-button>
         </div>
         <div v-else-if="canEditOrCancel(detail)">
+          <div v-if="isNeededDateOverdue(detail)" class="overdue-warning mb-3">
+            <i class="fa fa-exclamation-triangle"></i>
+            Tanggal barang dibutuhkan (<b>{{ detail.needed_date }}</b>) sudah lewat, sementara SPPB ini belum di-ACC Admin.
+            Mohon perbarui tanggal kebutuhan barangnya lewat tombol "Edit SPPB" di bawah ini.
+          </div>
           <p class="text-secondary text-sm mb-2">SPPB ini masih menunggu approval Admin. Anda masih bisa mengedit atau membatalkan pengajuan ini.</p>
-          <argon-button color="warning" size="sm" class="me-2" @click="openEdit(detail)"><i class="fa fa-pencil-alt"></i> Edit SPPB</argon-button>
+          <argon-button :color="isNeededDateOverdue(detail) ? 'danger' : 'warning'" size="sm" class="me-2" @click="openEdit(detail)"><i class="fa fa-pencil-alt"></i> {{ isNeededDateOverdue(detail) ? 'Perbarui Tanggal Dibutuhkan' : 'Edit SPPB' }}</argon-button>
           <argon-button color="secondary" size="sm" @click="doCancelSpb(detail)"><i class="fa fa-ban"></i> Batalkan SPPB</argon-button>
         </div>
         <p v-else class="text-secondary text-sm mb-0">Menunggu approval dari Admin/atasan.</p>
@@ -477,7 +534,7 @@
             </p>
             <textarea class="form-control mb-2" placeholder="Catatan (opsional)" v-model="actionForm.disposisi_note"></textarea>
             <argon-button color="success" size="sm" class="me-2" :disabled="!allItemsHaveSelectedVendor()" @click="doDisposisi(true)">Konfirmasi & Terbitkan PO</argon-button>
-            <argon-button color="warning" size="sm" @click="doDisposisi(false)">Belum Ada yang Sesuai</argon-button>
+            <argon-button color="secondary" size="sm" :disabled="!allItemsHaveSelectedVendor()" :title="!allItemsHaveSelectedVendor() ? 'Pilih vendor untuk semua barang terlebih dahulu' : ''" @click="openPrintPerbandinganHarga()">Preview Perbandingan Harga</argon-button>
           </div>
         </div>
         <p v-else class="text-secondary text-sm">SPPB sedang diproses oleh Purchasing (komparasi & pemilihan vendor per barang).</p>
@@ -489,7 +546,7 @@
         <div v-for="(po, i) in detail.purchase_orders" :key="'po-card-' + i" class="section-box po-card">
             <div class="po-card-header" @click="poExpanded[po.id] = !poExpanded[po.id]">
               <div class="po-card-header-main">
-                <span class="po-card-number">{{ po.po_number }}</span>
+                <span class="po-card-number">{{ po.po_number }}{{ po.po_number_suffix ? '/' + po.po_number_suffix : '' }}</span>
                 <span class="po-card-vendor">{{ po.supplier }}</span>
               </div>
               <div class="po-card-header-side">
@@ -514,56 +571,83 @@
                 </tbody>
               </table>
 
-              <div class="po-info-chips mb-3">
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">Dibuat Oleh</div>
-                  <div class="po-info-chip-value">{{ po.sign_dibuat || '-' }}</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">Disetujui Oleh</div>
-                  <div class="po-info-chip-value">{{ po.sign_disetujui || '-' }}</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">Discount</div>
-                  <div class="po-info-chip-value">{{ formatPercent(po.discount_percent) }}%</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">PPN</div>
-                  <div class="po-info-chip-value">{{ formatPercent(po.ppn_percent) }}%</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">PPh</div>
-                  <div class="po-info-chip-value">{{ formatPercent(po.pph_percent) }}%</div>
-                </div>
-                <div class="po-info-chip" v-if="po.up_name">
-                  <div class="po-info-chip-label">Up</div>
-                  <div class="po-info-chip-value">{{ po.up_name }}</div>
-                </div>
-                <div class="po-info-chip" v-if="po.no_sppb_manual">
-                  <div class="po-info-chip-label">No. SPPB</div>
-                  <div class="po-info-chip-value">{{ po.no_sppb_manual }}</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">No. Invoice</div>
-                  <div class="po-info-chip-value">{{ po.invoice_number || '-' }}</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">Jumlah Invoice</div>
-                  <div class="po-info-chip-value">Rp {{ formatRupiah(po.invoice_amount) }}</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">Tanggal Bayar</div>
-                  <div class="po-info-chip-value">{{ po.payment_date || '-' }}</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">Jumlah Dibayar</div>
-                  <div class="po-info-chip-value">Rp {{ formatRupiah(po.payment_amount) }}</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">Metode</div>
-                  <div class="po-info-chip-value">{{ po.payment_method || '-' }}</div>
-                </div>
-              </div>
+              <table class="po-info-table mb-3">
+                <tbody>
+                  <tr class="group-header"><td colspan="2">Tanda Tangan</td></tr>
+                  <tr>
+                    <td class="label">Dibuat Oleh</td>
+                    <td class="value">{{ po.sign_dibuat || '-' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Disetujui Oleh</td>
+                    <td class="value">{{ po.sign_disetujui || '-' }}</td>
+                  </tr>
+
+                  <tr class="group-header"><td colspan="2">Pajak &amp; Discount</td></tr>
+                  <tr>
+                    <td class="label">Discount</td>
+                    <td class="value">{{ formatPercent(po.discount_percent) }}%</td>
+                  </tr>
+                  <tr v-if="po.potongan_harga > 0">
+                    <td class="label">Potongan Harga</td>
+                    <td class="value">Rp {{ formatRupiah(po.potongan_harga) }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">PPN</td>
+                    <td class="value">{{ formatPercent(po.ppn_percent) }}%</td>
+                  </tr>
+                  <tr>
+                    <td class="label">PPh</td>
+                    <td class="value">{{ formatPercent(po.pph_percent) }}%</td>
+                  </tr>
+
+                  <template v-if="po.up_name || po.no_sppb_manual">
+                    <tr class="group-header"><td colspan="2">Info Tambahan</td></tr>
+                    <tr v-if="po.up_name">
+                      <td class="label">Up</td>
+                      <td class="value">{{ po.up_name }}</td>
+                    </tr>
+                    <tr v-if="po.no_sppb_manual">
+                      <td class="label">No. SPPB</td>
+                      <td class="value">{{ po.no_sppb_manual }}</td>
+                    </tr>
+                  </template>
+
+                  <tr class="group-header"><td colspan="2">Progress Pengadaan</td></tr>
+                  <tr v-if="po.resolusi_note">
+                    <td class="label">Catatan Receipt</td>
+                    <td class="value">{{ po.resolusi_note }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">No. Invoice</td>
+                    <td class="value">{{ po.invoice_number || '-' }}</td>
+                  </tr>
+                  <tr v-if="po.invoice_photo">
+                    <td class="label">Foto Invoice</td>
+                    <td class="value"><a :href="photoUrl('invoice_photo', po.invoice_photo)" target="_blank" class="photo-link"><i class="fa fa-image"></i> Lihat Foto</a></td>
+                  </tr>
+                  <tr>
+                    <td class="label">Jumlah Invoice</td>
+                    <td class="value">Rp {{ formatRupiah(po.invoice_amount) }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Tanggal Bayar</td>
+                    <td class="value">{{ po.payment_date || '-' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Jumlah Dibayar</td>
+                    <td class="value">Rp {{ formatRupiah(po.payment_amount) }}</td>
+                  </tr>
+                  <tr v-if="po.payment_photo">
+                    <td class="label">Foto Pembayaran</td>
+                    <td class="value"><a :href="photoUrl('payment_photo', po.payment_photo)" target="_blank" class="photo-link"><i class="fa fa-image"></i> Lihat Foto</a></td>
+                  </tr>
+                  <tr>
+                    <td class="label">Metode</td>
+                    <td class="value">{{ po.payment_method || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
 
               <div class="d-flex justify-content-between align-items-center">
                 <argon-button color="secondary" size="sm" :disabled="!(po.sign_dibuat && po.sign_disetujui)" @click="openPrintPoPreview(po)">Preview / Print PO</argon-button>
@@ -582,33 +666,39 @@
               </tbody>
             </table>
 
-            <!-- INFO PO: TANDA TANGAN, DISCOUNT, PPN, PPH & INFO MANUAL (satu form, untuk preview print) -->
-            <div class="po-info-box mb-3" v-if="taxForms[po.id] && (taxEditing[po.id] || !taxIsComplete(po))">
+            <!-- INFO PO: DISCOUNT, PPN, PPH & INFO MANUAL (satu form, untuk preview print).
+                 Tanda tangan PO (Dibuat Oleh: Randy, Disetujui Oleh: Robinan) sudah otomatis
+                 terisi dari backend saat PO diterbitkan, jadi tidak perlu diinput manual di sini. -->
+            <div class="po-info-box mb-3" v-if="userRole === 'Purchasing' && taxForms[po.id] && (taxEditing[po.id] || !taxIsComplete(po))">
               <div class="po-info-box-title">Info PO (untuk Preview Print)</div>
 
-              <div class="po-info-group-label">Tanda Tangan</div>
+              <div class="po-info-group-label">No. PO</div>
               <div class="row g-2 mb-3">
-                <div class="col-md-6">
-                  <label class="text-xs text-secondary">Dibuat Oleh</label>
-                  <input class="form-control form-control-sm" placeholder="Nama" v-model="signPoForms[po.id].sign_dibuat">
+                <div class="col-md-3">
+                  <label class="text-xs text-secondary">Nomor (otomatis)</label>
+                  <input type="text" class="form-control form-control-sm" :value="po.po_number" disabled>
                 </div>
-                <div class="col-md-6">
-                  <label class="text-xs text-secondary">Disetujui Oleh</label>
-                  <input class="form-control form-control-sm" placeholder="Nama" v-model="signPoForms[po.id].sign_disetujui">
+                <div class="col-md-9">
+                  <label class="text-xs text-secondary">Format (isi manual, mis. BCK-RETAIL/PO/VIII/2026)</label>
+                  <input class="form-control form-control-sm" placeholder="BCK-RETAIL/PO/VIII/2026" v-model="taxForms[po.id].po_number_suffix">
                 </div>
               </div>
 
               <div class="po-info-group-label">Pajak &amp; Discount</div>
               <div class="row g-2 mb-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <label class="text-xs text-secondary">Discount (%)</label>
                   <input type="number" min="0" max="100" step="0.01" class="form-control form-control-sm" v-model="taxForms[po.id].discount_percent">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                  <label class="text-xs text-secondary">Potongan Harga (Rp)</label>
+                  <input type="number" min="0" step="1" class="form-control form-control-sm" placeholder="0" v-model="taxForms[po.id].potongan_harga">
+                </div>
+                <div class="col-md-3">
                   <label class="text-xs text-secondary">PPN (%)</label>
                   <input type="number" min="0" max="100" step="0.01" class="form-control form-control-sm" v-model="taxForms[po.id].ppn_percent">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <label class="text-xs text-secondary">PPh (%)</label>
                   <input type="number" min="0" max="100" step="0.01" class="form-control form-control-sm" v-model="taxForms[po.id].pph_percent">
                 </div>
@@ -633,38 +723,52 @@
             <div class="po-info-box mb-3" v-else-if="taxForms[po.id]">
               <div class="po-info-box-title d-flex justify-content-between align-items-center">
                 <span>Info PO</span>
-                <i v-if="po.status === 'PO Diterbitkan'" class="fa fa-pencil-alt" style="cursor:pointer; color:#8392ab;" title="Ubah info PO" @click="taxEditing[po.id] = true"></i>
+                <i v-if="po.status === 'PO Diterbitkan' && userRole === 'Purchasing'" class="fa fa-pencil-alt" style="cursor:pointer; color:#8392ab;" title="Ubah info PO" @click="taxEditing[po.id] = true"></i>
               </div>
-              <div class="po-info-chips">
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">Dibuat Oleh</div>
-                  <div class="po-info-chip-value">{{ po.sign_dibuat || '-' }}</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">Disetujui Oleh</div>
-                  <div class="po-info-chip-value">{{ po.sign_disetujui || '-' }}</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">Discount</div>
-                  <div class="po-info-chip-value">{{ formatPercent(po.discount_percent) }}%</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">PPN</div>
-                  <div class="po-info-chip-value">{{ formatPercent(po.ppn_percent) }}%</div>
-                </div>
-                <div class="po-info-chip">
-                  <div class="po-info-chip-label">PPh</div>
-                  <div class="po-info-chip-value">{{ formatPercent(po.pph_percent) }}%</div>
-                </div>
-                <div class="po-info-chip" v-if="po.up_name">
-                  <div class="po-info-chip-label">Up</div>
-                  <div class="po-info-chip-value">{{ po.up_name }}</div>
-                </div>
-                <div class="po-info-chip" v-if="po.no_sppb_manual">
-                  <div class="po-info-chip-label">No. SPPB</div>
-                  <div class="po-info-chip-value">{{ po.no_sppb_manual }}</div>
-                </div>
-              </div>
+              <p v-if="!taxIsComplete(po)" class="text-secondary text-sm mb-2">Purchasing belum mengisi Discount, PPN &amp; PPh untuk PO ini.</p>
+              <table class="po-info-table">
+                <tbody>
+                  <tr class="group-header"><td colspan="2">Tanda Tangan</td></tr>
+                  <tr>
+                    <td class="label">Dibuat Oleh</td>
+                    <td class="value">{{ po.sign_dibuat || '-' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Disetujui Oleh</td>
+                    <td class="value">{{ po.sign_disetujui || '-' }}</td>
+                  </tr>
+
+                  <tr class="group-header"><td colspan="2">Pajak &amp; Discount</td></tr>
+                  <tr>
+                    <td class="label">Discount</td>
+                    <td class="value">{{ formatPercent(po.discount_percent) }}%</td>
+                  </tr>
+                  <tr v-if="po.potongan_harga > 0">
+                    <td class="label">Potongan Harga</td>
+                    <td class="value">Rp {{ formatRupiah(po.potongan_harga) }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">PPN</td>
+                    <td class="value">{{ formatPercent(po.ppn_percent) }}%</td>
+                  </tr>
+                  <tr>
+                    <td class="label">PPh</td>
+                    <td class="value">{{ formatPercent(po.pph_percent) }}%</td>
+                  </tr>
+
+                  <template v-if="po.up_name || po.no_sppb_manual">
+                    <tr class="group-header"><td colspan="2">Info Tambahan</td></tr>
+                    <tr v-if="po.up_name">
+                      <td class="label">Up</td>
+                      <td class="value">{{ po.up_name }}</td>
+                    </tr>
+                    <tr v-if="po.no_sppb_manual">
+                      <td class="label">No. SPPB</td>
+                      <td class="value">{{ po.no_sppb_manual }}</td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
               <div v-if="po.tax_updated_by" class="text-xs text-secondary mt-2">
                 Terakhir diubah oleh {{ po.tax_updated_by }}<template v-if="po.tax_updated_at"> · {{ po.tax_updated_at }}</template><template v-if="po.status !== 'PO Diterbitkan'"> — sudah dikunci (PO lewat tahap PO Diterbitkan)</template>
               </div>
@@ -686,12 +790,26 @@
                 <div class="row g-2">
                   <div class="col-4"><input class="form-control form-control-sm" placeholder="No. Invoice" v-model="poForms[po.id].invoice_number"></div>
                   <div class="col-4"><input type="date" class="form-control form-control-sm" v-model="poForms[po.id].invoice_date"></div>
-                  <div class="col-4"><input type="text" inputmode="numeric" class="form-control form-control-sm" placeholder="Jumlah (Rp)" :value="formatRupiah(poForms[po.id].invoice_amount)" @input="onCurrencyInput(poForms[po.id], 'invoice_amount', $event)"></div>
+                  <div class="col-4">
+                    <input type="text" inputmode="numeric" class="form-control form-control-sm" placeholder="Jumlah (Rp)" :value="formatRupiah(poForms[po.id].invoice_amount)" @input="onCurrencyInput(poForms[po.id], 'invoice_amount', $event)">
+                    <small v-if="po.grand_total" class="text-secondary">Otomatis dari Grand Total PO: Rp {{ formatRupiah(po.grand_total) }}</small>
+                  </div>
+                </div>
+                <div class="row g-2 mt-1">
+                  <div class="col-12">
+                    <label class="text-xs text-secondary d-block">Foto Invoice (opsional)</label>
+                    <input type="file" accept="image/*" class="form-control form-control-sm" @change="onPhotoChange(poForms[po.id], 'invoice_photo', $event)">
+                    <small v-if="po.invoice_photo" class="text-secondary">Foto sudah tersimpan (<a :href="photoUrl('invoice_photo', po.invoice_photo)" target="_blank" class="photo-link"><i class="fa fa-image"></i> Lihat Foto</a>). Kosongkan kalau tidak ingin diganti.</small>
+                  </div>
                 </div>
                 <argon-button color="success" size="sm" class="mt-2" @click="doInvoicePo(po)">Simpan Invoice</argon-button>
                 <argon-button color="secondary" size="sm" class="mt-2 ms-1" title="Mundur (Salah Catat Receipt)" @click="doMundurPo(po)"><i class="fa fa-arrow-left"></i></argon-button>
               </div>
-              <p v-else class="text-secondary text-sm mb-0">Menunggu Purchasing mencatat invoice.</p>
+              <div v-else class="po-info-box">
+                <div class="po-info-box-title">Menunggu Purchasing Mencatat Invoice</div>
+                <p v-if="po.resolusi_note" class="text-secondary text-sm mb-0">Catatan Receipt: {{ po.resolusi_note }}</p>
+                <p class="text-secondary text-sm mb-0">Belum ada invoice yang dicatat untuk PO ini.</p>
+              </div>
             </div>
 
             <div v-if="po.status === 'Invoice'">
@@ -708,10 +826,22 @@
                     </select>
                   </div>
                 </div>
+                <div class="row g-2 mt-1">
+                  <div class="col-12">
+                    <label class="text-xs text-secondary d-block">Foto Bukti Pembayaran (opsional)</label>
+                    <input type="file" accept="image/*" class="form-control form-control-sm" @change="onPhotoChange(poForms[po.id], 'payment_photo', $event)">
+                    <small v-if="po.payment_photo" class="text-secondary">Foto sudah tersimpan (<a :href="photoUrl('payment_photo', po.payment_photo)" target="_blank" class="photo-link"><i class="fa fa-image"></i> Lihat Foto</a>). Kosongkan kalau tidak ingin diganti.</small>
+                  </div>
+                </div>
                 <argon-button color="success" size="sm" class="mt-2" @click="doPaymentPo(po)">Simpan Pembayaran</argon-button>
                 <argon-button color="secondary" size="sm" class="mt-2 ms-1" title="Mundur (Salah Catat Invoice)" @click="doMundurPo(po)"><i class="fa fa-arrow-left"></i></argon-button>
               </div>
-              <p v-else class="text-secondary text-sm mb-0">Menunggu Purchasing mencatat pembayaran.</p>
+              <div v-else class="po-info-box">
+                <div class="po-info-box-title">Invoice Sudah Dicatat Purchasing</div>
+                <p class="text-secondary text-sm mb-1">No: {{ po.invoice_number || '-' }} · Tanggal: {{ po.invoice_date || '-' }} · Jumlah: Rp {{ formatRupiah(po.invoice_amount) }}</p>
+                <a v-if="po.invoice_photo" :href="photoUrl('invoice_photo', po.invoice_photo)" target="_blank" class="photo-link"><i class="fa fa-image"></i> Lihat Foto Invoice</a>
+                <p class="text-secondary text-sm mb-0 mt-2">Menunggu Purchasing mencatat pembayaran.</p>
+              </div>
             </div>
             </div>
             </div>
@@ -763,7 +893,9 @@ export default {
   data() {
     return {
       submitting: false,
+      formsSpbId: null,
       userRole: '',
+      storageUrl: config.apiUrl.trim().replace(/\/$/, ''), // dipakai buat akses file lewat endpoint /file (lihat photoUrl())
       vendors: [],
       stockList: [],
       table: { data: [] },
@@ -778,6 +910,9 @@ export default {
       poForms: {},
       signForm: {},
       signPoForms: {},
+      poSearchKeyword: '',
+      poSearchResults: [],
+      poSearchDone: false,
       taxForms: {},
       taxEditing: {},
       conditionEditing: {},
@@ -955,6 +1090,17 @@ export default {
       const myName = localStorage.getItem('username');
       return !!myName && row.created_by === myName;
     },
+    // SPPB biasanya barangnya dibutuhkan 3 hari setelah diajukan. Kalau sampai tanggal
+    // itu SPPB-nya belum di-ACC Admin, tanggal kebutuhan yang lama sudah tidak relevan lagi
+    // — pengaju harus masukkan tanggal kebutuhan yang baru lewat "Edit SPPB".
+    isNeededDateOverdue(row) {
+      if (!row || row.status !== 'Menunggu Approval' || !row.needed_date) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const needed = new Date(row.needed_date);
+      needed.setHours(0, 0, 0, 0);
+      return needed < today;
+    },
     openEdit(row) {
       let context = this;
       // Kalau dipanggil dari dalam modal Detail (klik "Edit SPPB" di sana), modal Detail
@@ -1021,6 +1167,16 @@ export default {
       if (!context.newSpb.needed_date) {
         context.notify('Tanggal barang dibutuhkan wajib diisi', 'error');
         return;
+      }
+      {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const needed = new Date(context.newSpb.needed_date);
+        needed.setHours(0, 0, 0, 0);
+        if (needed < today) {
+          context.notify('Tanggal barang dibutuhkan tidak boleh tanggal yang sudah lewat. Mohon pilih tanggal hari ini atau setelahnya.', 'error');
+          return;
+        }
       }
       if (!context.newSpb.sign_diajukan || !context.newSpb.sign_ditinjau || !context.newSpb.sign_disetujui) {
         context.notify('Nama Diajukan/Ditinjau/Disetujui Oleh wajib diisi', 'error');
@@ -1125,33 +1281,83 @@ export default {
       let context = this;
       Api(context, spb.lanjutPenawaran(context.detail.id)).onSuccess(function () {
         context.notify('Lanjut ke tahap Penawaran Harga', 'success');
-        context.refreshDetail();
+        context.refreshDetail(true);
       }).onError(function (response) {
         context.notify((response.response && response.response.data && response.response.data.message) || 'Gagal lanjut ke tahap penawaran', 'error');
       }).call();
     },
-    canMundurToVendor() {
-      // Tombol ini muncul selama ADA minimal 1 PO yang statusnya masih persis
-      // "PO Diterbitkan" (belum lanjut ke Resolusi/Invoice/Selesai). Begitu semua
-      // PO udah lanjut, tombol hilang; begitu salah satu PO dimundurin balik ke
-      // "PO Diterbitkan", tombol ini muncul lagi otomatis.
-      if (this.userRole !== 'Purchasing') return false;
-      const pos = this.detail.purchase_orders || [];
-      return pos.some(po => po.status === 'PO Diterbitkan');
-    },
-    doMundurSpbToVendor() {
-      let context = this;
-      if (context.userRole !== 'Purchasing') return;
-      if (!confirm('PO yang sudah diterbitkan akan dibatalkan (kalau belum ada Receipt/Invoice/Payment sama sekali, otomatis dihapus) dan SPPB balik ke tahap Finalisasi Vendor, supaya harga/vendor bisa dipilih ulang. Lanjutkan?')) return;
+    // Tombol mundur di header modal (khusus Purchasing), mundur 1 tahap per klik, berhenti
+    // di tahap paling awal milik Purchasing (Permintaan Vendor). Dicek dari status PO yang
+    // PALING MAJU dulu (bukan cuma status SPB), karena status SPB cuma generic "PO Diterbitkan"
+    // begitu ada PO yang mundur dari Selesai, walaupun PO itu sendiri sebenarnya sudah di
+    // tahap Invoice/Resolusi, bukan benar-benar "PO Diterbitkan" (belum diisi info PO):
+    //   Selesai   -> Invoice   (per-PO, lewat mundurPo)
+    //   Invoice   -> Resolusi  (per-PO, lewat mundurPo)
+    //   Resolusi  -> PO Diterbitkan (per-PO, lewat mundurPo)
+    //   PO Diterbitkan (SPB, dan masih ada PO yang beneran di tahap isi info) -> Penawaran Harga Vendor
+    //   Permintaan Pengadaan -> Permintaan Vendor
+    // Data yang sudah disimpan tidak hilang, dan isian yang sudah diketik tapi belum disimpan
+    // dipertahankan (refreshDetail(true)).
+    mundurTahapTarget() {
+      if (this.userRole !== 'Purchasing') return null;
 
-      Api(context, spb.mundur(context.detail.id)).onSuccess(function (response) {
-        context.notify((response.data && response.data.message) || 'Berhasil mundur ke Finalisasi Vendor', 'success');
-        context.refreshDetail();
-      }).onError(function (response) {
-        context.notify((response.response && response.response.data && response.response.data.message) || 'Gagal memundurkan tahap SPPB', 'error');
-      }).call();
+      const pos = this.detail.purchase_orders || [];
+      const order = ['Selesai', 'Invoice', 'Resolusi'];
+      for (const status of order) {
+        const po = pos.find(p => p.status === status);
+        if (po) return { level: 'po', po, from: status };
+      }
+
+      if (this.detail.status === 'PO Diterbitkan' && pos.some(p => p.status === 'PO Diterbitkan')) {
+        return { level: 'spb', from: 'PO Diterbitkan' };
+      }
+      if (this.detail.status === 'Permintaan Pengadaan') {
+        return { level: 'spb', from: 'Permintaan Pengadaan' };
+      }
+      return null;
     },
-    initForms() {
+    canMundurTahap() {
+      return this.mundurTahapTarget() !== null;
+    },
+    mundurTahapTitle() {
+      return this.canMundurTahap() ? 'Mundur ke Permintaan Vendor' : '';
+    },
+    doMundurTahap() {
+      let context = this;
+      if (!context.mundurTahapTarget()) return;
+
+      if (!confirm('SPPB ini akan dimundurkan sampai ke tahap Permintaan Vendor. PO yang belum lanjut ke Receipt/Invoice/Payment akan dibatalkan (isian Info PO-nya disimpan, dipakai lagi kalau vendor yang sama dikonfirmasi ulang); PO yang sudah lanjut akan dimundurkan bertahap dulu sampai bisa ikut dibatalkan. Data penawaran harga & vendor terpilih tidak akan hilang. Lanjutkan?')) return;
+
+      const step = function () {
+        const target = context.mundurTahapTarget();
+        if (!target) {
+          context.notify('Berhasil mundur ke Permintaan Vendor', 'success');
+          context.refreshDetail(true);
+          return;
+        }
+        const request = target.level === 'po' ? spb.mundurPo(target.po.id) : spb.mundur(context.detail.id);
+        Api(context, request).onSuccess(function () {
+          Api(context, spb.show(context.detail.id)).onSuccess(function (res) {
+            context.detail = res.data.data;
+            step();
+          }).call();
+        }).onError(function (error) {
+          const res = error && error.response;
+          const msg = (res && res.data && res.data.message)
+            || ('Gagal memundurkan tahap' + (res && res.status ? ' (kode error ' + res.status + ', cek log backend)' : ''));
+          context.notify(msg, 'error');
+          context.refreshDetail(true);
+        }).call();
+      };
+      step();
+    },
+    initForms(keepDrafts) {
+      // keepDrafts dipakai saat mundur/lanjut tahap: isian yang sudah diketik tapi belum
+      // disimpan dipertahankan, supaya tidak perlu ngetik ulang. Cuma berlaku kalau SPPB-nya
+      // sama dengan yang formnya sedang terbuka.
+      const prevForms = (keepDrafts === true && this.formsSpbId === this.detail.id)
+        ? { itemForms: this.itemForms, requestVendorForms: this.requestVendorForms, poForms: this.poForms, taxForms: this.taxForms }
+        : null;
       const itemForms = {};
       const requestVendorForms = {};
       (this.detail.items || []).forEach(it => {
@@ -1166,21 +1372,36 @@ export default {
       const taxForms = {};
       const poExpanded = {};
       (this.detail.purchase_orders || []).forEach(po => {
+        // Isi form dari data yang SUDAH tersimpan di PO (bukan dikosongin), supaya kalau PO
+        // dimundurkan (mis. dari Invoice balik ke Receipt) Purchasing tidak perlu ngetik ulang.
+        // Kalau belum pernah diisi, invoice_amount default ke Grand Total PO.
+        const dateOnly = (v) => (v ? String(v).substring(0, 10) : '');
+        const moneyOnly = (v) => (v !== null && v !== undefined && v !== '' ? Math.round(Number(v)) : '');
         poForms[po.id] = {
-          resolusi_note: '',
-          invoice_number: '', invoice_date: '', invoice_amount: '',
-          payment_date: '', payment_amount: '', payment_method: '',
+          resolusi_note: po.resolusi_note || '',
+          invoice_number: po.invoice_number || '',
+          invoice_date: dateOnly(po.invoice_date),
+          invoice_amount: po.invoice_amount !== null && po.invoice_amount !== undefined
+            ? moneyOnly(po.invoice_amount)
+            : (po.grand_total ? Math.round(po.grand_total) : ''),
+          invoice_photo: null,
+          payment_date: dateOnly(po.payment_date),
+          payment_amount: moneyOnly(po.payment_amount),
+          payment_method: po.payment_method || '',
+          payment_photo: null,
         };
         signPoForms[po.id] = {
-          sign_dibuat: po.sign_dibuat,
-          sign_disetujui: po.sign_disetujui,
+          sign_dibuat: po.sign_dibuat || 'Randy',
+          sign_disetujui: po.sign_disetujui || 'Robinan',
         };
         taxForms[po.id] = {
           discount_percent: po.discount_percent,
+          potongan_harga: po.potongan_harga,
           ppn_percent: po.ppn_percent,
           pph_percent: po.pph_percent,
           up_name: po.up_name,
           no_sppb_manual: po.no_sppb_manual,
+          po_number_suffix: po.po_number_suffix,
         };
         // Pertahankan status buka/tutup kartu PO kalau sebelumnya sudah pernah diset
         // (misal user baru saja simpan form), default: buka kalau belum Selesai.
@@ -1196,6 +1417,36 @@ export default {
         sign_ditinjau: this.detail.sign_ditinjau,
         sign_disetujui: this.detail.sign_disetujui,
       };
+
+      if (prevForms) {
+        this.restoreDrafts(prevForms);
+      }
+      this.formsSpbId = this.detail.id;
+    },
+    restoreDrafts(prev) {
+      const filled = (v) => v !== null && v !== undefined && v !== '';
+      Object.keys(this.itemForms).forEach(id => {
+        const p = prev.itemForms[id];
+        if (p && (filled(p.vendor_id) || filled(p.price) || filled(p.condition_note))) {
+          this.itemForms[id] = { vendor_id: p.vendor_id, price: p.price, condition_note: p.condition_note };
+        }
+      });
+      Object.keys(this.requestVendorForms).forEach(id => {
+        if (filled(prev.requestVendorForms[id])) {
+          this.requestVendorForms[id] = prev.requestVendorForms[id];
+        }
+      });
+      ['poForms', 'taxForms'].forEach(group => {
+        Object.keys(this[group]).forEach(id => {
+          const p = prev[group][id];
+          if (!p) return;
+          Object.keys(this[group][id]).forEach(key => {
+            if (filled(p[key]) && p[key] !== this[group][id][key]) {
+              this[group][id][key] = p[key];
+            }
+          });
+        });
+      });
     },
     openDetail(id) {
       let context = this;
@@ -1208,12 +1459,40 @@ export default {
         context.notify('Gagal mengambil detail SPPB', 'error');
       }).call();
     },
-    refreshDetail() {
+    // Cari PO lintas semua SPPB berdasarkan No. PO — buat PO yang sudah "tenggelam"
+    // ketimbunan SPPB lain, tidak perlu buka satu-satu.
+    searchPo() {
+      let context = this;
+      const keyword = context.poSearchKeyword.trim();
+      if (!keyword) {
+        context.clearPoSearch();
+        return;
+      }
+      Api(context, spb.searchPo(keyword)).onSuccess(function (response) {
+        context.poSearchResults = response.data.data;
+        context.poSearchDone = true;
+      }).onError(function () {
+        context.poSearchResults = [];
+        context.poSearchDone = true;
+      }).call();
+    },
+    clearPoSearch() {
+      this.poSearchKeyword = '';
+      this.poSearchResults = [];
+      this.poSearchDone = false;
+    },
+    openPoResult(po) {
+      this.clearPoSearch();
+      this.openDetail(po.spb_id);
+    },
+    refreshDetail(keepDrafts) {
       let context = this;
       Api(context, spb.show(context.detail.id)).onSuccess(function (response) {
         context.detail = response.data.data;
-        context.actionForm = {};
-        context.initForms();
+        if (keepDrafts !== true) {
+          context.actionForm = {};
+        }
+        context.initForms(keepDrafts === true);
         context.get();
       }).call();
     },
@@ -1316,27 +1595,55 @@ export default {
       if (!confirm('Yakin mau mundurkan tahap PO ini? Data yang sudah diisi (Receipt/Invoice/Payment) tidak akan hilang, cuma statusnya mundur supaya bisa diisi ulang.')) return;
       Api(context, spb.mundurPo(po.id)).onSuccess(function (response) {
         context.notify((response.data && response.data.message) || 'PO berhasil dimundurkan', 'success');
-        context.refreshDetail();
+        context.refreshDetail(true);
       }).onError(function (response) {
         context.notify((response.response && response.response.data && response.response.data.message) || 'Gagal memundurkan tahap PO', 'error');
       }).call();
     },
+    onPhotoChange(form, field, event) {
+      form[field] = event.target.files[0] || null;
+    },
+    photoUrl(folder, filename) {
+      return this.storageUrl + '/file?folder=' + folder + '&name=' + encodeURIComponent(filename);
+    },
+    buildFormData(obj) {
+      const formData = new FormData();
+      Object.keys(obj).forEach(function (key) {
+        const value = obj[key];
+        if (value !== null && value !== undefined) {
+          formData.append(key, value);
+        }
+      });
+      return formData;
+    },
     doInvoicePo(po) {
       let context = this;
-      Api(context, spb.invoicePo(po.id, context.poForms[po.id])).onSuccess(function () {
+      Api(context, spb.invoicePo(po.id, context.buildFormData(context.poForms[po.id]))).onSuccess(function () {
         context.notify('Invoice Berhasil Disimpan', 'success');
         context.refreshDetail();
-      }).onError(function () {
-        context.notify('Gagal Menyimpan Invoice', 'error');
+      }).onError(function (error) {
+        const data = error && error.response && error.response.data;
+        let msg = (data && data.message) || 'Gagal Menyimpan Invoice';
+        if (data && data.data && typeof data.data === 'object') {
+          const firstError = Object.values(data.data)[0];
+          if (firstError) msg = Array.isArray(firstError) ? firstError[0] : firstError;
+        }
+        context.notify(msg, 'error');
       }).call();
     },
     doPaymentPo(po) {
       let context = this;
-      Api(context, spb.paymentPo(po.id, context.poForms[po.id])).onSuccess(function (response) {
+      Api(context, spb.paymentPo(po.id, context.buildFormData(context.poForms[po.id]))).onSuccess(function (response) {
         context.notify((response.data && response.data.message) || 'Pembayaran Berhasil Disimpan', 'success');
         context.refreshDetail();
-      }).onError(function () {
-        context.notify('Gagal Menyimpan Pembayaran', 'error');
+      }).onError(function (error) {
+        const data = error && error.response && error.response.data;
+        let msg = (data && data.message) || 'Gagal Menyimpan Pembayaran';
+        if (data && data.data && typeof data.data === 'object') {
+          const firstError = Object.values(data.data)[0];
+          if (firstError) msg = Array.isArray(firstError) ? firstError[0] : firstError;
+        }
+        context.notify(msg, 'error');
       }).call();
     },
     signaturesComplete() {
@@ -1365,7 +1672,7 @@ export default {
       }
       // Discount/PPN/PPh yang dikosongin dianggap 0%, bukan "belum diisi" — biar
       // form ini konsisten nganggep sudah lengkap begitu disimpan, gak nyangkut.
-      ['discount_percent', 'ppn_percent', 'pph_percent'].forEach(function (field) {
+      ['discount_percent', 'potongan_harga', 'ppn_percent', 'pph_percent'].forEach(function (field) {
         if (taxForm[field] === '' || taxForm[field] === null || taxForm[field] === undefined) {
           taxForm[field] = 0;
         }
@@ -1402,6 +1709,14 @@ export default {
       }
       const baseUrl = config.apiUrl.trim().replace(/\/$/, '');
       window.open(baseUrl + '/print-pdf/sppb/' + this.detail.id, '_blank');
+    },
+    openPrintPerbandinganHarga() {
+      let context = this;
+      const ppn = prompt('PPN untuk dokumen perbandingan harga ini berapa persen? (kosongkan / isi 0 kalau tidak kena PPN)', '11');
+      if (ppn === null) return; // batal
+      const baseUrl = config.apiUrl.trim().replace(/\/$/, '');
+      const ppnValue = ppn.trim() === '' ? 11 : ppn.trim();
+      window.open(baseUrl + '/print-pdf/perbandingan-harga/' + context.detail.id + '?ppn_percent=' + encodeURIComponent(ppnValue), '_blank');
     },
     openPrintPoPreview(po) {
       let context = this;
@@ -1605,6 +1920,25 @@ export default {
   font-size: 0.85rem;
   margin-bottom: 1.25rem;
 }
+.overdue-warning {
+  background: #fff3cd;
+  color: #7a5b00;
+  border: 1px solid #ffe08a;
+  border-radius: 0.5rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.overdue-warning i {
+  color: #c98a00;
+  margin-right: 6px;
+}
+.po-search-results {
+  background: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
 
 /* ===== SUMMARY HEADER ===== */
 .summary-header {
@@ -1741,6 +2075,63 @@ export default {
   font-size: 0.8rem;
   font-weight: 700;
   color: #344767;
+}
+
+.po-info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.po-info-table td {
+  padding: 0.4rem 0.25rem;
+  font-size: 0.78rem;
+  border-bottom: 1px solid #f1f3f5;
+}
+.po-info-table tr:last-child td {
+  border-bottom: none;
+}
+.po-info-table td.label {
+  color: #8392ab;
+  width: 45%;
+}
+.po-info-table td.value {
+  font-weight: 700;
+  color: #344767;
+  text-align: right;
+}
+.po-info-table tr.group-header td {
+  background-color: #f8f9fb;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #8392ab;
+  font-weight: 700;
+  border-bottom: none;
+  padding-top: 0.7rem;
+}
+.po-info-table tr.group-header:first-child td {
+  padding-top: 0.3rem;
+}
+
+.photo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid #b3d7f5;
+  border-radius: 0.4rem;
+  background-color: #eaf5ff;
+  color: #0d6efd;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.photo-link:hover {
+  background-color: #dcedff;
+  color: #0d6efd;
+}
+.photo-link i {
+  font-size: 0.7rem;
 }
 
 .info-table td {
