@@ -243,7 +243,7 @@
       <div>
         <label for="example-text-input" class="form-control-label mt-3">Upload File <span style="color: red;">*</span></label>
         <input type="file" class="form-control" placeholder="Upload File" @change="filesChange" style="margin-bottom: 20px;">
-        <small>Download Template<a :href="storageUrl+'/template_import/Template Import Data Karyawan.xlsx'" style="color: blue;"> Import Data Karyawan</a></small>
+        <small>Download Template<a :href="templateUrl('Template Import Data Karyawan.xlsx')" style="color: blue;"> Import Data Karyawan</a></small>
         <div class="mt-2" v-if="tabelError.data.length !== 0 ">
           <table>
             <thead>
@@ -340,7 +340,7 @@ export default {
       tabelError: {
         data: []
       },
-      storageUrl : config.storageUrl,
+      storageUrl : config.apiUrl.trim().replace(/\/$/, ''), // dipakai lewat templateUrl(), lihat method-nya
       dataBarangMasuk: {},
       search: {
         material_code: '',
@@ -359,6 +359,9 @@ export default {
     this.getRole();
   },
   methods: {
+    templateUrl(filename) {
+      return this.storageUrl + '/file?folder=template_import&name=' + encodeURIComponent(filename);
+    },
     get(param){
       let context = this;               
       Api(context, barangMasuk.index({material_code: context.search.material_code, material_name: context.search.material_name, type: context.search.type, note: context.search.note, date: context.search.date})).onSuccess(function(response) {    

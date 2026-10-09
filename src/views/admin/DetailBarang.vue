@@ -16,7 +16,10 @@
               <div class="container">
                 <div class="row">
                   <div class="col-lg-6 col-sm-12 text-center">
-                    <img :src="storageUrl+'image_barang/'+dataBarang.image" class="rounded mb-4 img-fluid" />
+                    <img v-if="dataBarang.image"
+                         :src="fotoBase+encodeURIComponent(dataBarang.image)"
+                         @error="$event.target.onerror=null; $event.target.src=apiUrl+'file?folder=image_barang&name='+encodeURIComponent(dataBarang.image)"
+                         class="rounded mb-4 img-fluid" />
                   </div>
                   <div class="col-lg-6 col-sm-12">
                     <p style="margin-top: 10px; font-size: 10px; font-weight: bold;">MATRIAL CODE <span style="margin-left: 35px; margin-right: 10px;">:</span> {{ dataBarang.material_code }}</p>
@@ -70,6 +73,8 @@ export default {
       search: '',
       btnPrintShow: true,
       storageUrl : config.storageUrl,
+      apiUrl : config.apiUrl,
+      fotoBase : process.env.BASE_URL + 'foto_barang/',
     };
   },
   mounted(){

@@ -182,7 +182,7 @@
       <div>
         <label for="example-text-input" class="form-control-label mt-3">Upload File <span style="color: red;">*</span></label>
         <input type="file" class="form-control" placeholder="Upload File" @change="filesChange" style="margin-bottom: 20px;">
-        <small>Download Template<a :href="storageUrl+'/template_import/Template Import Data Users.xlsx'" style="color: blue;"> Import Data Setting Approval</a></small>
+        <small>Download Template<a :href="templateUrl('Template Import Data Users.xlsx')" style="color: blue;"> Import Data Setting Approval</a></small>
         <div class="mt-2" v-if="tabelError.data.length !== 0 ">
           <table>
             <thead>
@@ -273,7 +273,7 @@ export default {
       tabelError: {
         data: []
       },
-      storageUrl : config.storageUrl,
+      storageUrl : config.apiUrl.trim().replace(/\/$/, ''), // dipakai lewat templateUrl(), lihat method-nya
       akun: {},
       search: '',
       apiUrl :config.apiUrl,
@@ -284,6 +284,9 @@ export default {
     this.tokenApi = 'Bearer '+localStorage.getItem('token');
   },
   methods: {
+    templateUrl(filename) {
+      return this.storageUrl + '/file?folder=template_import&name=' + encodeURIComponent(filename);
+    },
     get(param){
       let context = this;               
       Api(context, akun.index({search: this.search})).onSuccess(function(response) {    

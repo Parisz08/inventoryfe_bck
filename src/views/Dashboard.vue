@@ -87,9 +87,11 @@
                   <tr v-for="(row, i) in table.data" :key="i">
                     <td class="align-middle text-center text-sm">
                       <img
-                        :src="storageUrl+'/image_barang/'+row.image"
+                        v-if="row.image"
+                        :src="fotoBase+encodeURIComponent(row.image)"
+                        @error="$event.target.onerror=null; $event.target.src=apiUrl+'file?folder=image_barang&name='+encodeURIComponent(row.image)"
                         class="avatar avatar-lg me-1"
-                        alt="user1"
+                        alt="foto barang"
                       />
                     </td>
                     <td class="align-middle text-center text-sm">
@@ -265,6 +267,7 @@ export default {
       totalBarangMasuk: '',
       totalBarangKeluar: '',
       apiUrl :config.apiUrl,
+      fotoBase : process.env.BASE_URL + 'foto_barang/',
     };
   },
   components: {

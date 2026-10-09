@@ -80,9 +80,11 @@
                       </td>
                       <td class="align-middle text-center text-sm">
                         <img
-                          :src="storageUrl+'/image_barang/'+row.image"
+                          v-if="row.image"
+                          :src="fotoBase+encodeURIComponent(row.image)"
+                        @error="$event.target.onerror=null; $event.target.src=apiUrl+'file?folder=image_barang&name='+encodeURIComponent(row.image)"
                           class="avatar avatar-lg me-1"
-                          alt="user1"
+                          alt="foto barang"
                         />
                       </td>
                       <td class="align-middle text-center text-sm">
@@ -153,6 +155,7 @@
     </div>
 
     <div v-if="activeTab === 'vendor'">
+      <a class="btn btn-sm btn-primary" :href="vendorExportUrl" target="_BLANK"><i class="fa fa-download fa-sm"></i> Export</a>
       <div class="row">
         <div class="col-12">
           <div class="card">
@@ -162,19 +165,9 @@
                   <h6>Master Data - Vendor</h6>
                 </div>
               </div>
-              <div class="col-4"></div>
-              <div class="col-4 float-right">
-                <argon-button
-                  class="mt-4"
-                  variant="gradient"
-                  color="success"
-                  size="sm"
-                  @click="createVendor()"
-                ><i class="fa fa-plus fa-sm" aria-hidden="true"></i> Tambah Vendor</argon-button>
-              </div>
             </div>
 
-            <div class="row px-3">
+            <div class="row px-3 align-items-center">
               <div class="col-12 col-md-5">
                 <input
                   type="text"
@@ -183,9 +176,30 @@
                   v-model="vendorSearch"
                 >
               </div>
+              <div class="col-12 col-md-auto mt-2 mt-md-0">
+                <argon-button
+                  class="mb-0 me-2"
+                  variant="gradient"
+                  color="secondary"
+                  size="sm"
+                  @click="openVendorFilter()"
+                ><i class="fa fa-filter fa-sm" aria-hidden="true"></i> Filter<span v-if="vendorFilterCount"> ({{ vendorFilterCount }})</span></argon-button>
+                <argon-button
+                  class="mb-0"
+                  variant="gradient"
+                  color="success"
+                  size="sm"
+                  @click="createVendor()"
+                ><i class="fa fa-plus fa-sm" aria-hidden="true"></i> Tambah Vendor</argon-button>
+              </div>
             </div>
 
-            <div class="card-body px-0 pt-0 pb-2 mt-4">
+            <div class="px-4 mt-2 text-secondary text-xs d-flex align-items-center" v-if="vendorTable.data.length">
+              <span>Menampilkan {{ filteredVendors.length }} dari {{ vendorTable.data.length }} vendor</span>
+              <a v-if="hasVendorFilter" href="javascript:void(0)" class="ms-3 text-xs font-weight-bold" @click="resetVendorFilter()"><i class="fa fa-times fa-sm" aria-hidden="true"></i> Reset filter</a>
+            </div>
+
+            <div class="card-body px-0 pt-0 pb-2 mt-3">
               <div class="table-responsive p-0 scroll">
                 <table class="table align-items-center mb-0">
                   <thead>
@@ -209,7 +223,7 @@
                     </tr>
                     <tr v-else-if="filteredVendors.length === 0">
                       <td colspan="9" class="text-center text-secondary text-sm py-3">
-                        Tidak ada vendor yang cocok dengan pencarian "{{ vendorSearch }}".
+                        Tidak ada vendor yang cocok dengan pencarian / filter yang dipilih.
                       </td>
                     </tr>
                     <tr v-for="(row, i) in filteredVendors" :key="row.id">
@@ -438,6 +452,47 @@
         </div>
       </div>
     </vue-final-modal>
+
+    <!-- =======  MODAL FILTER VENDOR ======= -->
+    <vue-final-modal v-model="vendorFilterModal.show" classes="modal-container" content-class="modal-content" :z-index="10000">
+      <div class="row">
+        <div class="col-11 float-left">
+          <span class="modal__title">Filter</span>
+        </div>
+        <div class="col-1 float-right">
+          <i style="cursor: pointer;" class="fa fa-times" aria-hidden="true" @click="vendorFilterModal.show = false"></i>
+        </div>
+      </div><hr>
+      <div class="modal__content container">
+        <label class="form-control-label mt-3">Termin Bayar</label>
+        <input type="text" class="form-control" list="vendorPaymentTermList" autocomplete="off" placeholder="Ketik untuk mencari, mis. Cash" v-model="vendorFilterDraft.payment_term">
+        <datalist id="vendorPaymentTermList">
+          <option v-for="opt in vendorPaymentTermOptions" :key="'pt-' + opt.label" :value="opt.label"></option>
+        </datalist>
+
+        <label class="form-control-label mt-3">Produk/Barang</label>
+        <input type="text" class="form-control" list="vendorProductList" autocomplete="off" placeholder="Ketik untuk mencari, mis. Sparepart" v-model="vendorFilterDraft.product">
+        <datalist id="vendorProductList">
+          <option v-for="opt in vendorProductOptions" :key="'pr-' + opt.label" :value="opt.label"></option>
+        </datalist>
+
+        <label class="form-control-label mt-3">Kelengkapan Data</label>
+        <select class="form-select" v-model="vendorFilterDraft.completeness">
+          <option value="">Semua Kelengkapan Data</option>
+          <option value="lengkap">Data lengkap</option>
+          <option value="tanpa_telepon">Telepon kosong</option>
+          <option value="tanpa_email">Email kosong</option>
+          <option value="tanpa_pic">PIC kosong</option>
+          <option value="tanpa_alamat">Alamat kosong</option>
+        </select>
+      </div><hr>
+      <div class="row">
+        <div class="col-12 text-center">
+          <argon-button variant="gradient" color="secondary" size="sm" class="me-2" @click="vendorFilterModal.show = false">Close</argon-button>
+          <argon-button variant="gradient" color="success" size="sm" @click="applyVendorFilter()">Filter</argon-button>
+        </div>
+      </div>
+    </vue-final-modal>
   </div>
 
 </template>
@@ -456,6 +511,11 @@ import stockBarang from '@/services/stockBarang.service';
 import barangMasuk from '@/services/barangMasuk.service';
 import akun from '@/services/akun.service';
 import vendor from '@/services/vendor.service';
+
+// Penanda untuk filter "(Belum diisi)" di Master Data Vendor. Nilai yang sama dipakai
+// backend (VendorExport) supaya hasil export = yang tampil di layar.
+const VENDOR_EMPTY = '__kosong__';
+const VENDOR_EMPTY_LABEL = '(Belum diisi)';
 
 export default {
   name: "tables",
@@ -493,6 +553,7 @@ export default {
         date: '',
       },
       apiUrl :config.apiUrl,
+      fotoBase : process.env.BASE_URL + 'foto_barang/',
       role: '',
       activeTab: 'barang',
       vendorTable: { data: [] },
@@ -500,18 +561,58 @@ export default {
       dataVendor: {},
       vendorLoaded: false,
       vendorSearch: '',
+      vendorFilter: { payment_term: '', product: '', completeness: '' },
+      vendorFilterDraft: { payment_term: '', product: '', completeness: '' },
+      vendorFilterModal: { show: false },
     };
   },
   computed: {
     filteredVendors() {
       const keyword = this.vendorSearch.trim().toLowerCase();
-      if (!keyword) {
-        return this.vendorTable.data;
-      }
+      const f = this.vendorFilter;
+      const isEmpty = (v) => (v === null || v === undefined ? '' : v).toString().trim() === '';
+      // "(Belum diisi)" = yang kosong; selain itu cocok kalau isinya MENGANDUNG teks yang diketik
+      const same = (v, target) => (target === VENDOR_EMPTY
+        ? isEmpty(v)
+        : (v || '').toString().toLowerCase().includes(target.toLowerCase()));
+      const emptyField = { tanpa_telepon: 'phone', tanpa_email: 'email', tanpa_pic: 'pic', tanpa_alamat: 'address' };
+
       return this.vendorTable.data.filter((row) => {
-        return [row.name, row.product, row.pic, row.phone, row.email, row.payment_term, row.address]
-          .some((field) => (field || '').toString().toLowerCase().includes(keyword));
+        if (f.payment_term && !same(row.payment_term, f.payment_term)) return false;
+        if (f.product && !same(row.product, f.product)) return false;
+        if (f.completeness === 'lengkap' && ['phone', 'email', 'pic', 'address'].some((k) => isEmpty(row[k]))) return false;
+        if (emptyField[f.completeness] && !isEmpty(row[emptyField[f.completeness]])) return false;
+        if (keyword) {
+          const found = [row.name, row.product, row.pic, row.phone, row.email, row.payment_term, row.address]
+            .some((field) => (field || '').toString().toLowerCase().includes(keyword));
+          if (!found) return false;
+        }
+        return true;
       });
+    },
+    vendorPaymentTermOptions() {
+      return this.buildVendorOptions('payment_term');
+    },
+    vendorProductOptions() {
+      return this.buildVendorOptions('product');
+    },
+    vendorFilterCount() {
+      const f = this.vendorFilter;
+      return [f.payment_term, f.product, f.completeness].filter(Boolean).length;
+    },
+    hasVendorFilter() {
+      const f = this.vendorFilter;
+      return !!(this.vendorSearch.trim() || f.payment_term || f.product || f.completeness);
+    },
+    // Export mengikuti pencarian + filter yang sedang aktif
+    vendorExportUrl() {
+      const f = this.vendorFilter;
+      const params = [];
+      if (this.vendorSearch.trim()) params.push('search=' + encodeURIComponent(this.vendorSearch.trim()));
+      if (f.payment_term) params.push('payment_term=' + encodeURIComponent(f.payment_term));
+      if (f.product) params.push('product=' + encodeURIComponent(f.product));
+      if (f.completeness) params.push('completeness=' + encodeURIComponent(f.completeness));
+      return this.apiUrl + 'export-excel/vendor' + (params.length ? '?' + params.join('&') : '');
     },
   },
   mounted(){
@@ -520,6 +621,49 @@ export default {
     this.getRole();
   },
   methods: {
+    // Daftar pilihan filter diambil dari data vendor yang ada (unik, tidak peduli huruf besar/kecil)
+    buildVendorOptions(field) {
+      const seen = {};
+      let hasEmpty = false;
+      this.vendorTable.data.forEach((row) => {
+        const value = (row[field] === null || row[field] === undefined ? '' : row[field]).toString().trim();
+        if (!value) { hasEmpty = true; return; }
+        const key = value.toLowerCase();
+        if (!seen[key]) seen[key] = value;
+      });
+      const options = Object.keys(seen)
+        .sort((a, b) => a.localeCompare(b))
+        .map((key) => ({ value: seen[key], label: seen[key] }));
+      if (hasEmpty) options.push({ value: VENDOR_EMPTY, label: VENDOR_EMPTY_LABEL });
+      return options;
+    },
+    // Seperti filter di Barang: pilihan diisi dulu di jendela Filter, baru berlaku setelah klik "Filter"
+    openVendorFilter() {
+      const f = this.vendorFilter;
+      this.vendorFilterDraft = {
+        payment_term: f.payment_term === VENDOR_EMPTY ? VENDOR_EMPTY_LABEL : f.payment_term,
+        product: f.product === VENDOR_EMPTY ? VENDOR_EMPTY_LABEL : f.product,
+        completeness: f.completeness,
+      };
+      this.vendorFilterModal.show = true;
+    },
+    applyVendorFilter() {
+      // Teks yang diketik dirapikan; "(Belum diisi)" diubah jadi penanda internal
+      const toFilterValue = (text) => {
+        const value = (text || '').toString().trim();
+        return value.toLowerCase() === VENDOR_EMPTY_LABEL.toLowerCase() ? VENDOR_EMPTY : value;
+      };
+      this.vendorFilter = {
+        payment_term: toFilterValue(this.vendorFilterDraft.payment_term),
+        product: toFilterValue(this.vendorFilterDraft.product),
+        completeness: this.vendorFilterDraft.completeness,
+      };
+      this.vendorFilterModal.show = false;
+    },
+    resetVendorFilter() {
+      this.vendorSearch = '';
+      this.vendorFilter = { payment_term: '', product: '', completeness: '' };
+    },
     get(param){
       let context = this;               
       Api(context, stockBarang.index({material_code: context.search.material_code, material_name: context.search.material_name, type: context.search.type, unit: context.search.unit, storage_location: context.search.storage_location, date: context.search.date})).onSuccess(function(response) {    
