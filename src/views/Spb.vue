@@ -22,11 +22,11 @@
           <div class="sppb-toolbar">
             <div class="sppb-search">
               <i class="fa fa-search"></i>
-              <input type="text" class="form-control" placeholder="Cari No. SPPB (mis. SPPB-0023)" v-model="sppbSearch">
+              <input type="text" class="form-control" placeholder="Cari No. SPPB (cukup angkanya, mis. 53)" v-model="sppbSearch">
             </div>
             <div class="sppb-search">
               <i class="fa fa-file-invoice"></i>
-              <input type="text" class="form-control" placeholder="Cari No. PO, lalu Enter" v-model="poSearchKeyword" @keyup.enter="searchPo()">
+              <input type="text" class="form-control" placeholder="Cari No. PO (mis. 007)" v-model="poSearchKeyword" @keyup.enter="searchPo()">
             </div>
             <select class="form-select sppb-status-select" v-model="search.status" @change="applyFilter()">
               <option value="">Semua Status</option>
@@ -952,6 +952,44 @@
       </div>
     </div>
   </vue-final-modal>
+
+  <!-- ============ MODAL PPN PER VENDOR (untuk Preview Perbandingan Harga) ============ -->
+  <vue-final-modal v-model="ppnModal.show" classes="modal-container" content-class="modal-content-width ppn-modal" :z-index="10001">
+    <div class="sppb-modal-head">
+      <div class="sppb-modal-head-left">
+        <div class="sppb-modal-icon"><i class="fa fa-percent"></i></div>
+        <div>
+          <div class="sppb-modal-title">PPN per Vendor</div>
+          <div class="sppb-modal-sub">Atur PPN tiap vendor untuk Preview Perbandingan Harga.</div>
+        </div>
+      </div>
+      <button type="button" class="sppb-icon-btn" title="Tutup" @click="ppnModal.show = false"><i class="fa fa-times" aria-hidden="true"></i></button>
+    </div>
+    <div class="sppb-modal-body">
+      <p class="text-secondary text-sm mb-2">Isi <b>0</b> untuk vendor yang <b>tidak kena PPN</b>. Pengaturan ini diingat untuk vendor yang sama di lain waktu.</p>
+      <div class="ppn-quick">
+        <argon-button variant="outline" color="secondary" size="xs" class="mb-0" @click="setAllPpn(11)">Semua 11%</argon-button>
+        <argon-button variant="outline" color="secondary" size="xs" class="mb-0" @click="setAllPpn(0)">Semua tanpa PPN</argon-button>
+      </div>
+      <div class="ppn-list">
+        <div v-for="row in ppnRows" :key="'ppn-' + row.vendor_id" class="ppn-row">
+          <div class="ppn-row-name">
+            <span>{{ row.name }}</span>
+            <span v-if="row.selected" class="ppn-selected">Terpilih</span>
+          </div>
+          <div class="ppn-input">
+            <input type="number" min="0" max="100" step="0.01" class="form-control form-control-sm" v-model="row.percent">
+            <span class="ppn-input-unit">%</span>
+          </div>
+        </div>
+        <div v-if="ppnRows.length === 0" class="text-secondary text-sm">Belum ada vendor yang memberi penawaran.</div>
+      </div>
+      <div class="sppb-modal-foot mt-3">
+        <argon-button color="secondary" size="sm" class="mb-0" @click="ppnModal.show = false">Batal</argon-button>
+        <argon-button color="success" variant="gradient" size="sm" class="mb-0" :disabled="ppnRows.length === 0" @click="doPrintPerbandinganHarga()"><i class="fa fa-print fa-sm"></i> Lihat Preview</argon-button>
+      </div>
+    </div>
+  </vue-final-modal>
 </template>
 
 <script>
@@ -982,6 +1020,8 @@ export default {
       stockList: [],
       table: { data: [], meta: { current_page: 1, last_page: 1, total: 0, per_page: 10 } },
       page: 1,
+      ppnModal: { show: false },
+      ppnRows: [],
       sppbSearch: '',
       sppbSearchTimer: null,
       search: { status: '' },
@@ -996,6 +1036,7 @@ export default {
       signForm: {},
       signPoForms: {},
       poSearchKeyword: '',
+      poSearchTimer: null,
       poSearchResults: [],
       poSearchDone: false,
       taxForms: {},
@@ -1047,6 +1088,11 @@ export default {
   // lain), Vue Router cuma ganti query di URL tanpa remount komponen ini, jadi mounted()
   // gak kepanggil ulang. Di-watch di sini supaya tetap kebuka otomatis di kedua kasus.
   watch: {
+    // Cari No. PO juga berjalan sendiri setelah berhenti mengetik sebentar (tanpa Enter)
+    poSearchKeyword() {
+      clearTimeout(this.poSearchTimer);
+      this.poSearchTimer = setTimeout(() => this.searchPo(), 400);
+    },
     // Cari No. SPPB berjalan sendiri setelah berhenti mengetik sebentar
     sppbSearch() {
       clearTimeout(this.sppbSearchTimer);
@@ -1658,15 +1704,20 @@ export default {
     // ketimbunan SPPB lain, tidak perlu buka satu-satu.
     searchPo() {
       let context = this;
+      // Kalau dipanggil lewat Enter, batalkan pencarian otomatis yang masih menunggu (supaya tidak dobel)
+      clearTimeout(context.poSearchTimer);
       const keyword = context.poSearchKeyword.trim();
       if (!keyword) {
         context.clearPoSearch();
         return;
       }
       Api(context, spb.searchPo(keyword)).onSuccess(function (response) {
+        // Abaikan hasil lama kalau kata kuncinya sudah berubah lagi
+        if (context.poSearchKeyword.trim() !== keyword) return;
         context.poSearchResults = response.data.data;
         context.poSearchDone = true;
       }).onError(function () {
+        if (context.poSearchKeyword.trim() !== keyword) return;
         context.poSearchResults = [];
         context.poSearchDone = true;
       }).call();
@@ -1905,13 +1956,54 @@ export default {
       const baseUrl = config.apiUrl.trim().replace(/\/$/, '');
       window.open(baseUrl + '/print-pdf/sppb/' + this.detail.id, '_blank');
     },
+    // Daftar vendor yang memberi penawaran di SPPB ini, dengan PPN bawaan: yang terakhir dipakai
+    // untuk vendor itu (diingat di browser), kalau belum pernah = 11%.
+    buildPpnRows() {
+      const rows = [];
+      const seen = {};
+      (this.detail.items || []).forEach((it) => {
+        (it.conditions || []).forEach((c) => {
+          if (!c.vendor_id) return;
+          if (!seen[c.vendor_id]) {
+            seen[c.vendor_id] = { vendor_id: c.vendor_id, name: c.supplier || ('Vendor #' + c.vendor_id), percent: 11, selected: false };
+            rows.push(seen[c.vendor_id]);
+          }
+          if (c.selected) seen[c.vendor_id].selected = true;
+        });
+      });
+      rows.forEach((r) => {
+        try {
+          const saved = localStorage.getItem('sppb_ppn_vendor_' + r.vendor_id);
+          if (saved !== null && saved !== '' && !isNaN(Number(saved))) r.percent = Number(saved);
+        } catch (e) { /* localStorage tidak tersedia: pakai 11% */ }
+      });
+      return rows;
+    },
     openPrintPerbandinganHarga() {
+      this.ppnRows = this.buildPpnRows();
+      this.ppnModal.show = true;
+    },
+    setAllPpn(value) {
+      this.ppnRows.forEach((r) => { r.percent = value; });
+    },
+    doPrintPerbandinganHarga() {
       let context = this;
-      const ppn = prompt('PPN untuk dokumen perbandingan harga ini berapa persen? (kosongkan / isi 0 kalau tidak kena PPN)', '11');
-      if (ppn === null) return; // batal
+      for (let i = 0; i < context.ppnRows.length; i++) {
+        const r = context.ppnRows[i];
+        const n = Number(r.percent);
+        if (r.percent === '' || r.percent === null || isNaN(n) || n < 0 || n > 100) {
+          context.notify('PPN ' + r.name + ' harus berupa angka 0 sampai 100', 'error');
+          return;
+        }
+      }
       const baseUrl = config.apiUrl.trim().replace(/\/$/, '');
-      const ppnValue = ppn.trim() === '' ? 11 : ppn.trim();
-      window.open(baseUrl + '/print-pdf/perbandingan-harga/' + context.detail.id + '?ppn_percent=' + encodeURIComponent(ppnValue), '_blank');
+      const params = ['ppn_percent=11'];
+      context.ppnRows.forEach((r) => {
+        params.push(encodeURIComponent('ppn[' + r.vendor_id + ']') + '=' + encodeURIComponent(Number(r.percent)));
+        try { localStorage.setItem('sppb_ppn_vendor_' + r.vendor_id, String(Number(r.percent))); } catch (e) { /* abaikan */ }
+      });
+      window.open(baseUrl + '/print-pdf/perbandingan-harga/' + context.detail.id + '?' + params.join('&'), '_blank');
+      context.ppnModal.show = false;
     },
     openPrintPoPreview(po) {
       let context = this;
@@ -3065,5 +3157,63 @@ export default {
 }
 .meta-chip-danger i {
   color: #b91c1c;
+}
+
+/* ===== MODAL PPN PER VENDOR ===== */
+::v-deep .ppn-modal {
+  max-width: 560px;
+}
+.ppn-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 0.8rem;
+}
+.ppn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ppn-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0.6rem 0.85rem;
+  background: #f8f9fb;
+  border: 1px solid #eaecef;
+  border-radius: 0.65rem;
+}
+.ppn-row-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #344767;
+}
+.ppn-selected {
+  padding: 1px 8px;
+  border-radius: 50px;
+  background: #d3f5df;
+  color: #0f7a3d;
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+.ppn-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.ppn-input .form-control {
+  width: 90px;
+  text-align: right;
+}
+.ppn-input-unit {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #8392ab;
 }
 </style>
